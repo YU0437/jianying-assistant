@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-"""剪映伴侣 —— 通过窗口父子嵌入（SetParent）真正长在剪映界面里的助手条
+"""剪映助手 —— 通过窗口父子嵌入（SetParent）真正长在剪映界面里的助手条
 
 点一下 = 按教程自动完成：全选→复合片段→预合成→大退剪映→重开进草稿→
 打开并选中 combination 里的预合成文件→**清空原时间线**（拖入由你手动做），
@@ -9,7 +9,7 @@
 ★ 纯物理辅助：不解析/不转码/**不碰产物文件**（只备份与写回草稿元数据 .json）。
 
 前置（只需一次）：剪映 → 设置 → 快捷键 → 给「预合成复合片段」绑定快捷键
-（伴侣会在首次运行时自动写入，默认 Alt+H）
+（助手会在首次运行时自动写入，默认 Alt+H）
 
 不修改剪映文件、不注入剪映进程：仅用 Win32 SetParent 把本程序窗口设为
 剪映主窗口的子窗口，视觉与行为上如同剪映自带控件。
@@ -225,7 +225,7 @@ MENU_BG = SURFACE_SOLID     # 右键菜单**不能**用色键，否则菜单整�
 BASE_W = 238                              # 缩放 1.0 时的基准宽度（横条目标宽）
 BASE_H = 56                               # ★ 48 → 56（第二十六批，用户："球再稍微大点"）。
                                           #   球和横条**同高**，所以这一改同时把横条加高、
-                                          #   把球心能给的画面做大（线稿小人越大约好认）。
+                                          #   让球心字形和进度环都有更充足的留白。
 BASE_R = 16                               # ★ 14 → 16：横条跟着变高，圆角同比例
 W, H, R = BASE_W, BASE_H, BASE_R          # 兼容旧引用（真正生效的是 self.W/H/R）
 CORNERS = {"右上": "tr", "右下": "br", "左上": "tl", "左下": "bl"}
@@ -446,12 +446,7 @@ def should_expand(kind, await_restore, hovering, ball_mode="auto"):
 def ball_label(kind, pct):
     """圆球正中那个字符：busy 显示百分比数字（进度看外圈弧线），其余按状态给一个字。
 
-    ★ 只给 1~3 个字符：球直径才 46px，塞不下词。**完整文案一律靠悬停展开**。
-    ★★ 2026-09-20 第二十五批：球心改画**动图**（用户："把剪的图片换成这个，
-      没运行时就不动，正在运行时就动"）—— 但这个函数**一个字都没改**：
-      它是"该显示什么"的语义层（测试直接对着它断言），
-      "画不画成小人"是渲染层的事（见 `_avatar_frame` / `ui_render.render(avatar=)`）。
-      两者分开之后，"动图素材缺失"只影响外观，不会把状态语义也弄丢。
+    ★ 只给 1~3 个字符：球直径才 56px，塞不下词。**完整文案一律靠悬停展开**。
     """
     if kind == "busy":
         try:
@@ -460,27 +455,6 @@ def ball_label(kind, pct):
             return BALL_TEXT["busy"]
         return str(max(0, min(100, p)))
     return BALL_TEXT.get(kind, BALL_TEXT["idle"])
-
-
-def is_working(kind, hold):
-    """这一状态算不算"**正在运行**"（球心那个小人动不动）—— 纯函数，测试直接断言。
-
-    ★ 判据为什么落在 `hold` 上：把 `kind="busy"` 的**全部**调用点数了一遍才定的 ——
-      · `hold=0` → "这件事还没完，跑完我自己 `set_state` 回来"
-        （执行中 / 取文件中 / 还原草稿中 / 正在体检 / 全自动导出中 / 正在中止…）
-        = **真的在跑**；
-      · `hold>0` → "一条通知，几秒后自动收回"
-        （导出守望已开 / 剪映路径已设置 / 已拦住会员弹窗 / 将嵌入剪映…）
-        = **没在跑**。
-      两者 `kind` 相同、配色也相同（都是橙），**只有 hold 分得开**。
-    ★ 试过、不行的那两个判据（记下来免得下次再试）：
-      · `self._cancel is not None`：`_extract_only` / 体检 / 导出守望那三条路
-        **根本不建** `_cancel`（明明在跑却判成没跑）；
-        而"正在启动剪映…"（hold=10，其实是**等用户**）反而会被判成在跑。
-      · `pct is not None`：只有带进度的那些算数，"正在中止…"这种没有百分比，
-        又被漏掉。
-    """
-    return kind == "busy" and not hold
 
 
 def morph_shape(expanded, pill_w, ball_d, pill_r):
@@ -1041,12 +1015,6 @@ class Companion:
         self._cur = {"w": float(BASE_W), "r": float(BASE_R),
                      "bgv": 0.0, "fgv": 0.0, "pct": 0.0}
         self._ui_ready = False       # 画布建好了没（没建好不许播动画）
-        # ---- 第二十五批：球心动图（"没人时站着、干活时跳舞"）----
-        # ★ 同样必须在 `_build_ui()` 之前：`_build_ui → _paint → _redraw →
-        #   _view_state → _avatar_frame` 一上来就读这两个。
-        self._working = False        # 现在算不算"正在运行"（见 is_working）
-        self._work_t0 = 0.0          # 本轮开跑的时刻（动图的时钟零点）
-        self._avatar_idx = 0         # 当前画第几帧（不跑时恒为 0 = 停在第一帧）
         self._redraw_err = False     # 重画异常只报一次，别刷屏
         self._pushed_size = None     # 已经推给窗口的 (W,H)，避免每帧都发 SetWindowPos
         self._last_float = None      # 独立模式上次摆的位置
@@ -1058,7 +1026,7 @@ class Companion:
         self._dragging = False       # 本次左键是一次"拖动"还是一次"点击"
 
         self.root = tk.Tk()
-        self.root.title("剪映伴侣")
+        self.root.title("剪映助手")
         self.root.overrideredirect(True)
         self.root.attributes("-topmost", True)
         self.root.configure(bg=UI_KEY)
@@ -1170,7 +1138,7 @@ class Companion:
         _add("jypath", "设置剪映路径…", self._pick_jy_exe)
         # ★ 2026-09-19 第十五批（用户"继续优化"）：**同一个坑的另一半**。
         #   上轮给"找不到剪映"补了手动指路，但"找不到草稿目录"的失败文案还在
-        #   让用户「把路径填进 伴侣配置.json」—— 让人手改 JSON，等于没有出路
+        #   让用户「把路径填进 助手配置.json」—— 让人手改 JSON，等于没有出路
         #   （而且和本项目"求助回路闭环"的规矩自相矛盾）。
         _add("draftroot", "设置草稿目录…", self._pick_draft_root)
         self.menu.add_separator()
@@ -1196,7 +1164,7 @@ class Companion:
         _add("openlog", "打开运行日志（发给作者）", self._open_log)
         _add("openbackup", "打开草稿备份文件夹", self._open_backup)
         self.menu.add_separator()
-        # ★ 2026-09-18 第八批（发给别人用）：伴侣首次运行会往**对方的剪映配置**里
+        # ★ 2026-09-18 第八批（发给别人用）：助手首次运行会往**对方的剪映配置**里
         #   写一个预合成快捷键。改别人机器上的设置，就必须给一条还原的路。
         _add("restorekeys", "还原剪映快捷键设置", self._restore_shortcut_keys)
         _add("autodraft", "自动打开原草稿", self._toggle_auto_draft)
@@ -1267,41 +1235,6 @@ class Companion:
 
     def _ball_text(self):
         return ball_label(self.state[0], self._pct)
-
-    def _avatar_frame(self):
-        """球心那张动图这一帧该画**第几帧** —— `None` = 不画动图（照旧画字）。
-
-        ★ 三档，别合并（用户的原话就是两档，但代码里必须留出第三档）：
-          · `ok / err / ask` → `None`：✓ × ! 这几个字**带信息量**（成了 / 错了 /
-            要你动手），拿小人顶掉就等于把唯一的一眼可读信号删了。
-          · 没在跑（待机 + "开关已切"那种提示）→ `0`：**停在第一帧**，
-            就是用户要的"没运行时就不动"。
-          · 正在跑 → 按时钟推进的帧号，见 `_tick_avatar`。
-        """
-        if self.state[0] in ("ok", "err", "ask"):
-            return None
-        if not self._working:
-            return 0
-        return self._avatar_idx
-
-    def _tick_avatar(self):
-        """按**墙上时钟**推进动图帧号（只在"正在运行"时走）。
-
-        ★ 时间轴交给 `ui_render`（它按 GIF **自己的逐帧时长**建轴）——
-          主程序不写"每帧 100ms"这种话：这张图恰好是 100ms，但"恰好"不是契约，
-          换一张不均匀的动图就会跳帧。
-        ★ 帧号**变了才重画**：这张图 10fps，而本循环 30fps —— 不判这一下就是
-          3 倍白干（虽然渲染有缓存兜着，但"每 33ms 走一遍 4.5ms 的整窗渲染"
-          对 6 核本本上的电池不是小事）。
-        """
-        if not self._working:
-            return
-        if _ur.avatar_count() <= 1:
-            return
-        idx = _ur.avatar_index_at((time.time() - self._work_t0) * 1000.0)
-        if idx != self._avatar_idx:
-            self._avatar_idx = idx
-            self._redraw()
 
     def _build_ui(self):
         """按 self._scale 重算整套度量，再重画一帧。
@@ -1398,16 +1331,6 @@ class Companion:
             # 球贴窗口哪一端：展开时窗口向左（或右）长出去，球那一端不许跑掉
             "ball_x": (W - self.H) if self._ball_at_right() else 0,
             "ball_text": (self._ball_text() if ball_a > 0.004 else None),
-            # ★ 球心动图的帧号（None = 不画动图、照旧画字）。这里只回答"第几帧"，
-            #   "这一帧画多大 / 要不要给进度环让位"全在渲染层算（它才知道球多大）。
-            # ★★ 门控是 `ball_a > 0.004 **或** pill_a > 0.004`，不是只看 ball_a。
-            #   第二十六批实测踩到：悬停**完全展开**之后 `ball_a` 归 0，而横条那个
-            #   图标位里画的就是同一张脸 —— 只看 ball_a 的话，一展开小人就变回数字
-            #   （README 预览图里当场就能看到：球上是小人、展开后图标位写成 "58"）。
-            #   这正是 ㉴-12/㉴-18 想防的"一次形变里换脸"，只不过它们只钉了渲染层，
-            #   漏了上面这层门控。两处都要在。
-            "avatar": (self._avatar_frame()
-                       if (ball_a > 0.004 or pill_a > 0.004) else None),
             "ball_pct": (float(cur["pct"]) if ring else None),
             "ring": ring,
             "pill": pill,
@@ -1438,7 +1361,6 @@ class Companion:
                 bar=(pill["bar"] if pill else None),
                 ball_a=st["ball_a"], pill_a=st["pill_a"],
                 hover=st["hover"], ball_x=st["ball_x"],
-                avatar=st["avatar"],
                 layout=self._lay,
                 sizes={"title": self._t_px, "sub": self._s_px})
             self._apply_window_size()
@@ -1776,10 +1698,10 @@ class Companion:
         except Exception:
             pass
         exe = sys.executable if getattr(sys, "frozen", False) else subprocess.list2cmdline(
-            [sys.executable, str(core.config_path().parent / "剪映伴侣.py")])
+            [sys.executable, str(core.config_path().parent / "剪映助手.py")])
         try:
             subprocess.Popen([exe] if getattr(sys, "frozen", False)
-                             else [sys.executable, str(core.config_path().parent / "剪映伴侣.py")],
+                             else [sys.executable, str(core.config_path().parent / "剪映助手.py")],
                              cwd=str(core.config_path().parent))
         except Exception:
             pass
@@ -1888,16 +1810,6 @@ class Companion:
         self._redraw()
 
     def set_state(self, kind, text, sub=None, hold=0, pct=None, step=None):
-        # ★ 动图的"开跑 / 收工"**只在这里**判定一次（判据见 `is_working`）：
-        #   开跑 → 记下时钟零点、从第一帧起；收工 → 帧号归零（回到"站着不动"）。
-        #   放在 `state` 之前算：后面 `_paint → _redraw → _view_state` 立刻要读它。
-        working = is_working(kind, hold)
-        if working and not self._working:
-            self._work_t0 = time.time()
-            self._avatar_idx = 0
-        elif not working:
-            self._avatar_idx = 0
-        self._working = working
         self.state = (kind, text)
         self._until = time.time() + hold if hold else 0
         # ★ 进度只在 kind=="busy" 时显示；收尾（ok/err）把条藏掉，免得
@@ -2249,7 +2161,7 @@ class Companion:
         ★ 2026-09-19 第十一批（体验）：有"跑过一键导出、但还没还原"的备份时，
           优先提示这件事。理由：那个状态是**存在草稿里**的
           （时间线被真清空过、草稿已是预合成后的样子），可界面提示只在
-          「等你导出」那一小段里常驻 —— 用户要是那会儿关了伴侣、或者重启了电脑，
+          「等你导出」那一小段里常驻 —— 用户要是那会儿关了助手、或者重启了电脑，
           再打开就只剩一句"一键导出"，很容易忘了还没还原，
           甚至在半残的草稿上又点一次。空闲态说出来，这条线才不会断。
         """
@@ -2314,7 +2226,7 @@ class Companion:
             return
         # ★ 2026-09-19 第十四批（用户"继续优化"）：别急着下"剪映没开"的结论 ——
         #   `_watch` 可能只是**还没认出**窗口（它 400ms 一轮，且剪映切页会重建主窗）。
-        #   不这么做的话，剪映明明开着、只是伴侣晚了一拍，就会**又启动一个剪映** ——
+        #   不这么做的话，剪映明明开着、只是助手晚了一拍，就会**又启动一个剪映** ——
         #   两个窗口抢前台，后面 find_jianying 还可能认错那个。
         #   ★ 但这里**只做一次瞬时查找，绝不 sleep 等**：主线程一卡，球就冻住，
         #     用户刚点完却半天没反应 —— 又是一出"点了没反应"。等待/启动/重试
@@ -2619,7 +2531,7 @@ class Companion:
         """手动指定剪映的**草稿目录**（在剪映里改过草稿位置的人的唯一出路）。
 
         ★ 2026-09-19 第十五批（用户"继续优化"）：和「设置剪映路径…」是同一个坑的两半。
-          失败文案原来写的是「把路径填进 伴侣配置.json 的 draft_root」——
+          失败文案原来写的是「把路径填进 助手配置.json 的 draft_root」——
           让用户手改 JSON，实际上等于没有出路。
         ★ 三处兜底：
           ① 选中的是**上一级**（比如 …\\Projects）时自动往下走一层到 com.lveditor.draft；
@@ -2772,7 +2684,7 @@ class Companion:
         """导出完成后：把草稿**还原回还没有预合成的那一版**。
 
         ★ 做法：把「一键导出」在预合成**之前**自动备份的草稿元数据 json 写回草稿
-          目录（伴侣只写 `.json`；预合成产物一个字节都不碰）。
+          目录（助手只写 `.json`；预合成产物一个字节都不碰）。
         ★ 顺序由 core.restore_draft 负责：先杀剪映（否则它退出时会覆盖写回）→
           留一份「还原前」快照 → 写回备份 → 重开剪映回到这份草稿。
         """
@@ -2896,7 +2808,7 @@ class Companion:
             # ★★ 再夹一次到**那块屏的工作区**（避开任务栏 / 屏幕外的无边框残留）。
             #   上面那次夹的是"整个虚拟桌面"，对右下角不够：剪映最大化时它的窗口
             #   矩形会越过屏幕边界（本机实测多出 9px），算出来球就压在任务栏上了。
-            #   基准取**剪映所在那块显示器**的工作区（拿不到就用伴侣自己的）。
+            #   基准取**剪映所在那块显示器**的工作区（拿不到就用助手自己的）。
             #   ★★ 第二十一批：用户**自己拖过**（custom）时**跳过这一夹** ——
             #      `monitor_work_area(球自己)` 给的是"球此刻所在那块屏"，
             #      拿它去夹，球就永远出不了这块屏（想拖到另一块屏会被拽回来）。
@@ -2983,10 +2895,6 @@ class Companion:
         except Exception:
             pass
         try:
-            self._tick_avatar()     # ★ 球心小人（只在"正在运行"时推进帧号，见那里）
-        except Exception:
-            pass
-        try:
             self._sync_dpi()        # ★ 换显示器 → 换 dpi 缩放（≤2 次/秒，很便宜）
         except Exception:
             pass
@@ -3036,7 +2944,7 @@ class Companion:
         self._sync_menu()
 
     def _toggle_auto_draft(self):
-        """是否让伴侣自己点开「原草稿」那张卡片。
+        """是否让助手自己点开「原草稿」那张卡片。
 
         ★ 为什么需要点：剪映**没有**任何非鼠标入口能打开指定草稿（快捷键表 91 条
           命令里没有；UIA 控件树是空的；没有 CLI 参数；重启也不会自动回到上次草稿）。
@@ -3046,7 +2954,7 @@ class Companion:
           退回让你自己点。点完光标还原到原位。
         ★ 2026-09-18 用户定案：**默认关**。自动点实测成功率不稳（同页多张封面
           判别度只有 +0.047），点错草稿必报「媒体格式不支持」，代价太大 ——
-          宁可自己点一下卡片换 100% 确定性。关着的时候伴侣**只点名**
+          宁可自己点一下卡片换 100% 确定性。关着的时候助手**只点名**
           "请打开草稿「X」（必须这个）"，鼠标一下都不动。
         """
         self.cfg["auto_open_draft"] = not self.cfg.get("auto_open_draft", False)
@@ -3058,7 +2966,7 @@ class Companion:
             self.set_state("busy", "自动打开原草稿已关", sub="重启后由你自己点卡片", hold=5)
 
     def _toggle_auto_drag(self):
-        """是否让伴侣**自动把预合成文件拖进时间线**。
+        """是否让助手**自动把预合成文件拖进时间线**。
 
         ★ 用户实测：剪映**不吃剪贴板**（Ctrl+V 拖不进去），所以只能真鼠标拖。
         ★ 怎么拖得准：资源管理器里按**文件名精确相等**定位条目（防抓到 `.alpha.mp4`
@@ -3096,13 +3004,13 @@ class Companion:
             core.notify_box(
                 "无需手动绑定：预合成快捷键已自动配置。\n\n"
                 f"当前快捷键：{hk.upper()}\n"
-                "（由伴侣自动写入剪映快捷键方案，\n"
+                "（由助手自动写入剪映快捷键方案，\n"
                 "  如需修改可在剪映设置→快捷键里改，\n"
-                "  伴侣会自动跟随）",
+                "  助手会自动跟随）",
                 "预合成快捷键")
         else:
             core.notify_box(
-                "下次一键导出时，伴侣会自动把预合成快捷键\n"
+                "下次一键导出时，助手会自动把预合成快捷键\n"
                 "写入剪映的快捷键方案（默认 Alt+H），\n"
                 "不需要你手动设置。\n\n"
                 "★ 写之前会自动备份你原来的快捷键设置，\n"
@@ -3208,23 +3116,23 @@ class Companion:
         threading.Thread(target=work, daemon=True).start()
 
     def _restore_shortcut_keys(self):
-        """把伴侣改过的剪映快捷键设置还原回去（发给别人用时必须有这条路）。"""
+        """把助手改过的剪映快捷键设置还原回去（发给别人用时必须有这条路）。"""
         bk = self.cfg.get("_shortcut_backup_dir") or ""
         cur = core.read_shortcut("precompileCombination", "") or "（没有）"
         if not bk:
             core.notify_box(
                 "还没备份过剪映快捷键设置，没有可还原的东西。\n\n"
-                "（只有伴侣给你自动绑过预合成快捷键时才会备份）\n"
+                "（只有助手给你自动绑过预合成快捷键时才会备份）\n"
                 f"当前预合成快捷键：{cur}",
                 "还原剪映快捷键设置")
             return
         if not ask_yes(
                 "还原剪映快捷键设置",
-                "把剪映的快捷键设置还原成**伴侣改动之前**的样子？\n\n"
+                "把剪映的快捷键设置还原成**助手改动之前**的样子？\n\n"
                 f"备份位置：\n{bk}\n\n"
                 "⚠️ 还原后请**完全退出剪映再打开**才会生效。\n"
                 "（预合成快捷键会回到「没有」的状态，\n"
-                "  下次一键导出时伴侣会重新自动绑定）",
+                "  下次一键导出时助手会重新自动绑定）",
                 parent=self.root):
             return
         ok, msg = core.restore_shortcut_config(self.cfg)
@@ -3239,7 +3147,7 @@ class Companion:
             k = winreg.OpenKey(winreg.HKEY_CURRENT_USER,
                                r"Software\Microsoft\Windows\CurrentVersion\Run")
             try:
-                winreg.QueryValueEx(k, "JianyingCompanion")
+                winreg.QueryValueEx(k, "JianyingAssistant")
                 return True
             finally:
                 winreg.CloseKey(k)
@@ -3254,10 +3162,10 @@ class Companion:
                                winreg.KEY_SET_VALUE)
             exe = f'"{sys.executable}"'
             if enable:
-                winreg.SetValueEx(k, "JianyingCompanion", 0, winreg.REG_SZ, exe)
+                winreg.SetValueEx(k, "JianyingAssistant", 0, winreg.REG_SZ, exe)
             else:
                 try:
-                    winreg.DeleteValue(k, "JianyingCompanion")
+                    winreg.DeleteValue(k, "JianyingAssistant")
                 except FileNotFoundError:
                     pass
             winreg.CloseKey(k)
@@ -3545,7 +3453,7 @@ class Companion:
                                        sub="右键「环境体检」可再看", hold=10)
                     else:
                         self.set_state("ok", "体检通过", sub="可以开始用了", hold=8)
-                    show_info("剪映伴侣 · 环境体检", text, parent=self.root)
+                    show_info("剪映助手 · 环境体检", text, parent=self.root)
                 elif item[0] == "popup":
                     _, hwnd, title, is_vip = item
                     self._handle_popup(hwnd, title, is_vip)
@@ -3697,7 +3605,7 @@ class Companion:
                 elif not self.embedded:
                     self._float_position()
 
-            # ---- 同生共死（退出侧）：剪映彻底退出 → 伴侣随之退出 ----
+            # ---- 同生共死（退出侧）：剪映彻底退出 → 助手随之退出 ----
             # 注意：显示/隐藏（最小化、切到别的程序）已交给 33ms 的 _follow_fast，
             # 这里只管"剪映真的没了"这一件事，避免两个循环抢窗口的显隐状态。
             if not self.embedded and self.state[0] != "busy":
@@ -3709,7 +3617,7 @@ class Companion:
                         self._jy_gone_since = time.time()
                     if getattr(self, "_jy_seen", False) \
                             and time.time() - self._jy_gone_since > 10:
-                        print("[exit] 剪映已完全退出，伴侣随之退出", flush=True)
+                        print("[exit] 剪映已完全退出，助手随之退出", flush=True)
                         self._quit()
                         return
         except Exception:
@@ -3723,9 +3631,9 @@ class Companion:
 def ensure_single_instance():
     """防多开：已有同名进程在跑就直接退出
 
-    ★ 2026-09-18 第九批：安装包里 exe 叫「剪映伴侣.exe」，但**直接跑绿色版**
-      （dist\\JianyingCompanion.exe，或者别人拷出去改回英文名）时进程名不含中文，
-      旧判断认不出来 → 能开出两个伴侣，两个 watch 线程互相抢前台。
+    ★ 2026-09-18 第九批：安装包里 exe 叫「剪映助手.exe」，但**直接跑绿色版**
+      （dist\\JianyingAssistant.exe，或者别人拷出去改回英文名）时进程名不含中文，
+      旧判断认不出来 → 能开出两个助手，两个 watch 线程互相抢前台。
       所以两种名字都认。
     """
     try:
@@ -3734,7 +3642,7 @@ def ensure_single_instance():
 
         def _is_me(nm):
             low = (nm or "").lower()
-            return ("剪映伴侣" in (nm or "")) or ("jianyingcompanion" in low)
+            return ("剪映助手" in (nm or "")) or ("jianyingassistant" in low)
 
         # PyInstaller 单文件模式会有父子两个同名进程（bootloader + 实际程序），都要排除
         others = [pid for pid, nm in core.pid_name_map().items()
@@ -3748,10 +3656,10 @@ def ensure_single_instance():
 
 
 def autosetup_cli():
-    """★ 第十六批：`剪映伴侣.exe --autosetup` —— **安装包在装完之后调它一次**。
+    """★ 第十六批：`剪映助手.exe --autosetup` —— **安装包在装完之后调它一次**。
 
     用户原话：「我觉得最好是安装时自动帮用户搞的很好，不让用户多余操作」。
-    于是装完那一步就替他把环境认好并写进 伴侣配置.json：
+    于是装完那一步就替他把环境认好并写进 助手配置.json：
     剪映装在哪、草稿放在哪（**直接读剪映自己的设置**，所以用户改过位置也认得出）。
 
     ★ 这个入口必须**绝不开窗、绝不弹框、绝不抢前台、绝不碰剪映**：
@@ -3786,7 +3694,7 @@ def selftest():
 
 if __name__ == "__main__":
     # ★ 顺序有讲究：`--autosetup` 必须排在防多开之前 ——
-    #   升级安装时旧版伴侣**可能正开着**，防多开会让它直接退出、什么也不做，
+    #   升级安装时旧版助手**可能正开着**，防多开会让它直接退出、什么也不做，
     #   那就等于"什么都没自动配"。它只写配置、不开窗口，和运行中的实例不冲突。
     if "--autosetup" in sys.argv:
         sys.exit(autosetup_cli())

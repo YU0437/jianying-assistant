@@ -20,7 +20,7 @@
 #
 #   ③ pywin32 全家（`win32\*.pyd` + `win32ui.pyd` + `pywin32_system32\*.dll`）
 #      约 2.37MB —— **源码里一个 `win32` 字样都没有**
-#      （`grep -n win32 jy_core.py 剪映伴侣.py ui_render.py` 零命中）。
+#      （`grep -n win32 jy_core.py 剪映助手.py ui_render.py` 零命中）。
 #      所有 Win32 调用一律走 `ctypes`（见 `ui_render.py` 的 `_u32` / `_gdi`）。
 #      它纯粹是因为这台机器的 env 里装着 pywin32，被 PyInstaller 顺带收进来的。
 #
@@ -48,14 +48,10 @@ DEAD = [
 BANNED_IN_BUNDLE = ('_avif', '_webp', 'win32/', 'win32\\', 'pythonwin', 'pythoncom')
 
 a = Analysis(
-    ['剪映伴侣.py'],
+    ['剪映助手.py'],
     pathex=[],
     binaries=[],
-    # ★ 球心动图（第二十五批）必须**跟着打进包**：它没有"退化回字"以外的兜底，
-    #   漏带就是"球心永远是个剪字"。onefile 下会被解到 `sys._MEIPASS`，
-    #   所以取用要走 `ui_render.res_dir()`（**不是** `Path(sys.executable).parent`
-    #   —— 那是安装目录，放的是 使用说明.txt / 运行日志.txt 这类**可写**文件）。
-    datas=[('ball_avatar.gif', '.')],
+    datas=[],
     hiddenimports=['jy_core'],
     hookspath=[],
     hooksconfig={},
@@ -85,16 +81,16 @@ pyz = PYZ(a.pure)
 #
 # ★★ 对用户**不可见**，这是选它的关键：
 #     · 用户下载到的仍然**只有一个 Setup exe**（`_release.py` 发的也是它）；
-#     · 装完是 `{app}\剪映伴侣.exe` + `{app}\_internal\` 一堆依赖 —— 用户只点快捷方式；
+#     · 装完是 `{app}\剪映助手.exe` + `{app}\_internal\` 一堆依赖 —— 用户只点快捷方式；
 #     · 配置/日志仍然写在 `{app}`（`Path(sys.executable).parent` 语义没变）。
 #   代价：安装时要多写 ~1000 个小文件（安装时间长几秒，一次性）；
 #         绿色版"单文件拷走就能跑"这个性质没了（但本项目本来就走安装包）。
 #
 # ⚠️ 三处跟着改（**漏一处就是"装完打不开"**）：
-#   ① `剪映伴侣安装包.iss` 的 [Files]：`_internal` 递归拷 + 主 exe 重命名两条；
+#   ① `剪映助手安装包.iss` 的 [Files]：`_internal` 递归拷 + 主 exe 重命名两条；
 #      它的 [UninstallDelete] 也要补 `{app}\_internal`（不然卸载留垃圾）；
-#   ② `重启伴侣.py`：拷的是**目录**，不是单个文件；
-#   ③ `_verify_exe.py`：EXE 路径变成 `dist\JianyingCompanion\JianyingCompanion.exe`。
+#   ② `重启助手.py`：拷的是**目录**，不是单个文件；
+#   ③ `_verify_exe.py`：EXE 路径变成 `dist\JianyingAssistant\JianyingAssistant.exe`。
 # ============================================================================
 
 exe = EXE(
@@ -102,7 +98,7 @@ exe = EXE(
     a.scripts,
     [],
     exclude_binaries=True,          # ★ onedir：依赖交给下面的 COLLECT
-    name='JianyingCompanion',
+    name='JianyingAssistant',
     # ★ 带版本信息（2026-09-18 第九批）：文件属性里能看到产品名/说明，
     #   比一个"空白属性 + 未知发布者"的 exe 可信得多。
     version='version_info.txt',
@@ -130,5 +126,5 @@ coll = COLLECT(
     a.datas,
     strip=False,
     upx=False,
-    name='JianyingCompanion',
+    name='JianyingAssistant',
 )

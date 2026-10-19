@@ -1,12 +1,12 @@
-# Jianying Companion
+# Jianying Assistant
 
 [简体中文](README.md) ｜ **English**
 
 > A floating ball that presses the hotkeys for you after Jianying Pro's "pre-compose" step.
 > **It only simulates keyboard/mouse input and moves windows — it never touches, modifies, or decrypts any video file.**
 
-[![Release](https://img.shields.io/github/v/release/YU0437/jianying-companion)](https://github.com/YU0437/jianying-companion/releases/latest)
-[![License](https://img.shields.io/github/license/YU0437/jianying-companion)](LICENSE)
+[![Release](https://img.shields.io/github/v/release/YU0437/jianying-assistant)](https://github.com/YU0437/jianying-assistant/releases/latest)
+[![License](https://img.shields.io/github/license/YU0437/jianying-assistant)](LICENSE)
 ![Platform](https://img.shields.io/badge/Windows-10%20%2F%2011%20x64-0078D6)
 ![Python](https://img.shields.io/badge/Python-3.10%2B-3776AB)
 ![Video files untouched](https://img.shields.io/badge/video_files-byte_untouched-critical)
@@ -28,7 +28,7 @@
 - This project is **not affiliated with, authorized by, or endorsed by**
   Jianying / CapCut (Shenzhen Lianmeng Technology / ByteDance).
 - Provided "as is", without warranty of any kind. **Always back up your drafts first**
-  (the companion backs them up itself — see below).
+  (the assistant backs them up itself — see below).
 
 ---
 
@@ -105,16 +105,16 @@ Every step is verified with **pixel self-checks / file fingerprints / window sta
 
 ### Option 1 — Download the installer (recommended for end users)
 
-1. Grab `剪映伴侣-Setup-x.y.z.exe` from [Releases](../../releases)
+1. Grab `剪映助手-Setup-x.y.z.exe` from [Releases](../../releases)
 2. Run it. Windows may show "Windows protected your PC / Unknown publisher" — that's because
    there is **no code-signing certificate**, which is normal for small personal tools. Click
    "More info" → "Run anyway"
-3. **It works right after installing**: during setup the companion detects its environment
+3. **It works right after installing**: during setup the assistant detects its environment
    (where Jianying is installed, where your drafts live) and writes it into the config —
    **you don't have to configure anything**
    - The draft location isn't guessed: it **reads Jianying's own setting**
      (Jianying → Settings → Draft location)
-4. Installs to `%LOCALAPPDATA%\JianyingCompanion` by default (this location **needs no admin
+4. Installs to `%LOCALAPPDATA%\JianyingAssistant` by default (this location **needs no admin
    rights**, so the config and log can actually be written; the installer blocks directories like
    `Program Files` where writes would fail)
 
@@ -123,10 +123,10 @@ Step-by-step guide: [docs/INSTALL.en.md](docs/INSTALL.en.md).
 ### Option 2 — Run from source
 
 ```bat
-git clone https://github.com/YU0437/jianying-companion.git
-cd jianying-companion
+git clone https://github.com/YU0437/jianying-assistant.git
+cd jianying-assistant
 pip install -r requirements.txt   :: to just run it, the minimum is  pip install pillow
-python 剪映伴侣.py
+python 剪映助手.py
 ```
 
 ### Option 3 — Build it yourself
@@ -169,7 +169,7 @@ left with a half-modified draft:
 Two details:
 
 - If you abort **before the pre-compose keys were even sent**, the draft was never touched — the
-  companion just stops. It will **not** close Jianying and will **not** write any file.
+  assistant just stops. It will **not** close Jianying and will **not** write any file.
 - If this run produced no backup, it will **honestly tell you it could not restore** and suggest
   `Ctrl+Z` — it never pretends to have cleaned up.
 
@@ -202,7 +202,7 @@ its pre-pre-compose state.
 <details>
 <summary><b>"Unsupported media format" — what now?</b></summary>
 
-That happens when Jianying was **not made to save the draft**. Normally the companion forces a save
+That happens when Jianying was **not made to save the draft**. Normally the assistant forces a save
 after pre-compose (so the registration lands in `draft_content.json`). If that step failed,
 Jianying treats the pre-compose cache as a plain video after restart.
 
@@ -223,7 +223,7 @@ Right-click the ball → "设置剪映路径…" and pick `JianyingPro.exe`.
 <details>
 <summary><b>"Draft folder not found"?</b></summary>
 
-The companion **reads the draft location from Jianying's own setting**
+The assistant **reads the draft location from Jianying's own setting**
 (`currentCustomDraftPath` in `%LOCALAPPDATA%\JianyingPro\User Data\Config\globalSetting`),
 so it still finds it if you moved your drafts.
 
@@ -251,14 +251,14 @@ writes no video files and has no network code. False positives come from the
 ## Repository layout
 
 ```
-jianying-precomp/
+jianying-assistant/
 ├── jy_core.py                  # Core: windows/keys/pixel checks/backup & restore/pipeline
-├── 剪映伴侣.py                  # GUI: floating ball + menu + event loop
+├── 剪映助手.py                  # GUI: floating ball + menu + event loop
 ├── 使用说明.txt                 # End-user manual shipped with the installer (Chinese)
-├── JianyingCompanion.spec       # PyInstaller spec
-├── 剪映伴侣安装包.iss            # Inno Setup installer script
+├── JianyingAssistant.spec       # PyInstaller spec
+├── 剪映助手安装包.iss            # Inno Setup installer script
 ├── version_info.txt / app.ico   # exe version info and icon
-├── 重启伴侣.py                  # Dev helper: kill → replace → relaunch → verify
+├── 重启助手.py                  # Dev helper: kill → replace → relaunch → verify
 ├── test_guard.py                # Main regression suite: red lines + shape + behaviour
 ├── test_gui_smoke.py            # GUI smoke test (really opens a tk window once)
 ├── test_settle.py               # File-settle detection

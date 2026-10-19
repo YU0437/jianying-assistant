@@ -16,8 +16,8 @@
 不会打印、不会落盘）。
 
 用法：
-    python _release.py v1.6.0 installer/剪映伴侣-Setup-1.6.0.exe
-    python _release.py v1.6.0 installer/剪映伴侣-Setup-1.6.0.exe --no-upload
+    python _release.py v1.6.0 installer/剪映助手-Setup-1.6.0.exe
+    python _release.py v1.6.0 installer/剪映助手-Setup-1.6.0.exe --no-upload
 """
 import json
 import os
@@ -28,11 +28,11 @@ import tempfile
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent
-REPO = "YU0437/jianying-companion"
+REPO = "YU0437/jianying-assistant"
 API = "https://api.github.com"
-CURL = ["curl", "-sS", "--ssl-no-revoke", "-H", "User-Agent: jianying-companion-release"]
+CURL = ["curl", "-sS", "--ssl-no-revoke", "-H", "User-Agent: jianying-assistant-release"]
 # 附件名统一 ASCII：中文名在部分下载器/浏览器上会被转义成乱码
-ASSET_PREFIX = "JianyingCompanion-Setup-"
+ASSET_PREFIX = "JianyingAssistant-Setup-"
 
 
 def token():

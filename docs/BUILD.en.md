@@ -41,10 +41,10 @@ C:\path\to\envs\tk\Scripts\pip install -r requirements.txt
 | File | Responsibility |
 |---|---|
 | `jy_core.py` | **The core.** Window enumeration, key injection, pixel self-checks, backup/restore, the whole pipeline. No GUI code — it can be run and tested on its own |
-| `剪映伴侣.py` | **The GUI.** A tk floating ball + right-click menu + a queue-driven event loop. Can be embedded into Jianying's window via `SetParent` |
+| `剪映助手.py` | **The GUI.** A tk floating ball + right-click menu + a queue-driven event loop. Can be embedded into Jianying's window via `SetParent` |
 | `使用说明.txt` | The end-user manual shipped with the installer (**keep it in sync with behaviour changes**) |
-| `JianyingCompanion.spec` | PyInstaller config (onefile, UPX off, version info, icon) |
-| `剪映伴侣安装包.iss` | Inno Setup script |
+| `JianyingAssistant.spec` | PyInstaller config (onefile, UPX off, version info, icon) |
+| `剪映助手安装包.iss` | Inno Setup script |
 
 One architectural rule: **the GUI does no business logic.** Every "did it actually work?" decision
 lives in `jy_core`; the GUI only pushes `status_cb / finished_cb` into a queue and renders them.
@@ -81,28 +81,28 @@ python _test_backup_restore.py  # offline: backup/restore + red-line guards
 
 ```bat
 :: 1) Compile
-python -m py_compile jy_core.py 剪映伴侣.py
+python -m py_compile jy_core.py 剪映助手.py
 
 :: 2) Static check (only the single "local variable 'e' unused" warning in jy_core is allowed)
-python -m pyflakes jy_core.py 剪映伴侣.py test_guard.py test_gui_smoke.py _verify_exe.py
+python -m pyflakes jy_core.py 剪映助手.py test_guard.py test_gui_smoke.py _verify_exe.py
 
 :: 3) All four test suites
 python test_guard.py && python test_gui_smoke.py && python test_settle.py && python _test_backup_restore.py
 
 :: 4) Build the exe
-python -m PyInstaller JianyingCompanion.spec --noconfirm --distpath dist --workpath build
+python -m PyInstaller JianyingAssistant.spec --noconfirm --distpath dist --workpath build
 
 :: 5) Verify the exe (names / constants / strings / default config really inside it)
 python _verify_exe.py
 
 :: 6) Deploy locally + relaunch and verify (md5 comparison)
-python 重启伴侣.py
+python 重启助手.py
 
 :: 7) Sync the shipped manual
-copy /Y 使用说明.txt "%LOCALAPPDATA%\JianyingCompanion\使用说明.txt"
+copy /Y 使用说明.txt "%LOCALAPPDATA%\JianyingAssistant\使用说明.txt"
 
 :: 8) Build the installer (★ must be after step 4)
-"%LOCALAPPDATA%\Programs\Inno Setup 6\ISCC.exe" 剪映伴侣安装包.iss
+"%LOCALAPPDATA%\Programs\Inno Setup 6\ISCC.exe" 剪映助手安装包.iss
 ```
 
 What `_verify_exe.py` does: it reads the produced exe directly, unpacks the PyInstaller archive, and
@@ -122,7 +122,7 @@ deserialises the code objects of the main script and `jy_core`, then asserts:
 ### Silent install self-test (optional, but worth it)
 
 ```bat
-"%LOCALAPPDATA%\Temp\jc_e2e\...\剪映伴侣-Setup-1.0.0.exe" /VERYSILENT /SUPPRESSMSGBOXES ^
+"%LOCALAPPDATA%\Temp\jc_e2e\...\剪映助手-Setup-1.0.0.exe" /VERYSILENT /SUPPRESSMSGBOXES ^
   /NORESTART /NOICONS "/GROUP=jcE2E" "/DIR=%LOCALAPPDATA%\Temp\jc_e2e"
 ```
 

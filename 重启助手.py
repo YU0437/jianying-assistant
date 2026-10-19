@@ -1,10 +1,10 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-"""交付后重启「剪映伴侣」，并**隔一次调用**复核新实例真的在跑。
+"""交付后重启「剪映助手」，并**隔一次调用**复核新实例真的在跑。
 
 为什么需要它（2026-09-17 实测踩坑）：
   1) Windows 允许**删除/覆盖一个正在运行的 exe**（文件被标记删除，句柄还在）。
-     于是 `cp -f dist\\...exe 剪映伴侣.exe` 会"成功"，但**老进程跑的还是老镜像** ——
+     于是 `cp -f dist\\...exe 剪映助手.exe` 会"成功"，但**老进程跑的还是老镜像** ——
      看起来部署成功，实际新代码一行都没生效。必须先杀干净再覆盖。
   2) 沙盒里**没有任何常规办法**能把 GUI 进程真正拉起来并让它活下去：
      · `cmd /c start "" xx.exe` / `explorer.exe xx.exe` → 返回 0，既没窗口也没进程；
@@ -15,18 +15,18 @@
      ✅ 唯一可靠的办法是借**计划任务服务**起进程：
         `schtasks /create ... /sc once /st 23:59 /f` → `schtasks /run /tn ...` → 删任务。
         Task Scheduler 是独立的服务进程，拉起来的 exe 跟沙盒无关，能长期存活。
-  3) `taskkill /IM 剪映伴侣.exe /F` 从 bash 传中文文件名容易被编码搞坏参数，
+  3) `taskkill /IM 剪映助手.exe /F` 从 bash 传中文文件名容易被编码搞坏参数，
      用 `taskkill /PID <pid> /F` 最稳。
 
 用法：
-    python 重启伴侣.py                 # 杀干净 → 覆盖 dist 版 → 启动 → 复核
-    python 重启伴侣.py --no-copy       # 只重启，不覆盖
-    python 重启伴侣.py --check         # 只报告当前窗口/进程（rc=0 表示活着）
+    python 重启助手.py                 # 杀干净 → 覆盖 dist 版 → 启动 → 复核
+    python 重启助手.py --no-copy       # 只重启，不覆盖
+    python 重启助手.py --check         # 只报告当前窗口/进程（rc=0 表示活着）
 
 ★★ 第二十八批起，产物是 **onedir**（一个目录），不是单个 exe：
    覆盖 = 1) 清空并重拷 `_internal\\`（整个目录一起比内容指纹）
-          2) 把 `dist\\JianyingCompanion\\JianyingCompanion.exe` 拷成
-             `{安装目录}\\剪映伴侣.exe`（保持重命名，快捷方式/任务管理器里都认这个名字）
+          2) 把 `dist\\JianyingAssistant\\JianyingAssistant.exe` 拷成
+             `{安装目录}\\剪映助手.exe`（保持重命名，快捷方式/任务管理器里都认这个名字）
    ⚠️ `_internal` 与主 exe **必须同时更新**：只换 exe 会得到"新代码 + 旧依赖"，
       它能起来，然后在某条冷路径上炸。
 """
@@ -41,23 +41,23 @@ from pathlib import Path
 
 HERE = Path(__file__).resolve().parent
 # ★★ 第二十八批：打包从 onefile 换成 **onedir**（启动快 ~1.2 秒，见 spec）。
-#   产出物变成一个**目录**：`dist\JianyingCompanion\{JianyingCompanion.exe, _internal\}`。
-#   部署 = 把整个目录搬到安装目录，并把主 exe 重命名成 剪映伴侣.exe
+#   产出物变成一个**目录**：`dist\JianyingAssistant\{JianyingAssistant.exe, _internal\}`。
+#   部署 = 把整个目录搬到安装目录，并把主 exe 重命名成 剪映助手.exe
 #   （`_internal` 必须**紧挨着**它 —— bootloader 就是按这个相对位置找依赖的）。
 #   ⚠️ 两个来源都认：onedir 优先，退回落单文件的旧产物（方便中途回退）。
-DIST_DIR = HERE / "dist" / "JianyingCompanion"
-DIST_EXE_IN_DIR = DIST_DIR / "JianyingCompanion.exe"
-DIST_ONEFILE = HERE / "dist" / "JianyingCompanion.exe"
-DEST_DIR = Path.home() / "AppData" / "Local" / "JianyingCompanion"
-DEST = DEST_DIR / "剪映伴侣.exe"
+DIST_DIR = HERE / "dist" / "JianyingAssistant"
+DIST_EXE_IN_DIR = DIST_DIR / "JianyingAssistant.exe"
+DIST_ONEFILE = HERE / "dist" / "JianyingAssistant.exe"
+DEST_DIR = Path.home() / "AppData" / "Local" / "JianyingAssistant"
+DEST = DEST_DIR / "剪映助手.exe"
 INTERNAL = "_internal"
-TITLE = "剪映伴侣"
+TITLE = "剪映助手"
 
 u, k = ctypes.windll.user32, ctypes.windll.kernel32
 
 
 def windows():
-    """所有标题为 剪映伴侣 的顶层窗口 → [(hwnd, pid)]"""
+    """所有标题为 剪映助手 的顶层窗口 → [(hwnd, pid)]"""
     out = []
     CB = ctypes.WINFUNCTYPE(ctypes.c_bool, w.HWND, w.LPARAM)
 
@@ -77,7 +77,7 @@ def windows():
 
 
 def procs():
-    """所有名为 剪映伴侣.exe 的进程 → [(pid, name)]"""
+    """所有名为 剪映助手.exe 的进程 → [(pid, name)]"""
     TH32CS_SNAPPROCESS = 0x2
 
     class PE32(ctypes.Structure):
@@ -95,7 +95,7 @@ def procs():
     if k.Process32First(s, ctypes.byref(e)):
         while True:
             nm = e.szExeFile.decode("gbk", "replace")
-            if "伴侣" in nm:
+            if "助手" in nm:
                 res.append((e.th32ProcessID, nm))
             if not k.Process32Next(s, ctypes.byref(e)):
                 break

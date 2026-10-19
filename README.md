@@ -1,12 +1,12 @@
-# 剪映伴侣 · Jianying Companion
+# 剪映助手 · Jianying Assistant
 
 **简体中文** ｜ [English](README.en.md)
 
 > 把剪映「预合成」之后那段**要重复按快捷键、要手动杀进程、要清空时间线**的活，
 > 交给一个悬浮球替你按。**它只模拟键鼠、只摆窗口 —— 不碰、不改、不解密任何视频文件。**
 
-![版本](https://img.shields.io/github/v/release/YU0437/jianying-companion?label=%E7%89%88%E6%9C%AC)
-[![License](https://img.shields.io/github/license/YU0437/jianying-companion)](LICENSE)
+![版本](https://img.shields.io/github/v/release/YU0437/jianying-assistant?label=%E7%89%88%E6%9C%AC)
+[![License](https://img.shields.io/github/license/YU0437/jianying-assistant)](LICENSE)
 ![平台](https://img.shields.io/badge/Windows-10%20%2F%2011%20x64-0078D6)
 ![Python](https://img.shields.io/badge/Python-3.10%2B-3776AB)
 ![红线](https://img.shields.io/badge/%E4%B8%8D%E7%A2%B0%E8%A7%86%E9%A2%91%E6%96%87%E4%BB%B6-%E4%B8%80%E5%AD%97%E8%8A%82%E4%B8%8D%E5%8A%A8-critical)
@@ -23,7 +23,7 @@
   它只是把「本来就要靠人手动点十几下」的操作变成一次点击。
 - 请只用于**你自己拥有版权的草稿**，并自行确认你的使用方式符合剪映的用户协议与当地法律。
 - 本项目与剪映（深圳市脸萌科技有限公司 / 字节跳动）**没有任何关系**，未经其授权或认可。
-- 软件按「原样」提供，不附带任何担保。**请务必先备份草稿**（伴侣自己也会备份，见下）。
+- 软件按「原样」提供，不附带任何担保。**请务必先备份草稿**（助手自己也会备份，见下）。
 
 ---
 
@@ -95,13 +95,13 @@
 
 ### 方式一：下载安装包（推荐，给普通用户）
 
-1. 到 [Releases](../../releases) 下载 `剪映伴侣-Setup-x.y.z.exe`
+1. 到 [Releases](../../releases) 下载 `剪映助手-Setup-x.y.z.exe`
 2. 双击安装。Windows 可能弹「已保护你的电脑 / 未知发布者」—— 因为**没有买代码签名证书**，
    点「更多信息」→「仍要运行」即可（所有个人小工具都这样，不是病毒）
-3. **装完就能用**：安装收尾时伴侣会自己认一遍环境（剪映装在哪、草稿放在哪），
+3. **装完就能用**：安装收尾时助手会自己认一遍环境（剪映装在哪、草稿放在哪），
    认到就直接写进配置，**你不需要做任何设置**
    - 草稿位置不是"猜"的：它直接**读剪映自己的设置**（剪映 → 设置 → 草稿位置）
-4. 默认装到 `%LOCALAPPDATA%\JianyingCompanion`（这个位置**不需要管理员权限**，
+4. 默认装到 `%LOCALAPPDATA%\JianyingAssistant`（这个位置**不需要管理员权限**，
    配置和日志才能正常写；安装程序会挡住 `Program Files` 这类写不进去的目录）
 
 详细的图文步骤见 [docs/安装教程.md](docs/安装教程.md)。
@@ -109,10 +109,10 @@
 ### 方式二：从源码运行
 
 ```bat
-git clone https://github.com/YU0437/jianying-companion.git
-cd jianying-companion
+git clone https://github.com/YU0437/jianying-assistant.git
+cd jianying-assistant
 pip install -r requirements.txt   :: 只想跑起来的话，最小是 pip install pillow
-python 剪映伴侣.py
+python 剪映助手.py
 ```
 
 ### 方式三：自己打包
@@ -149,7 +149,7 @@ python 剪映伴侣.py
 
 两个细则：
 
-- 中止时**连预合成都还没发出去**的话，草稿本来就没人动过 —— 伴侣只会停下，
+- 中止时**连预合成都还没发出去**的话，草稿本来就没人动过 —— 助手只会停下，
   **不会**去关剪映、也**不会**写任何文件
 - 万一这一轮没做出备份，它会**如实告诉你「没能自动还原」**并提示你先 `Ctrl+Z` 撤销 ——
   绝不假装收拾干净了
@@ -180,7 +180,7 @@ python 剪映伴侣.py
 <details>
 <summary><b>报「媒体格式不支持」怎么办？</b></summary>
 
-这是**没让剪映保存草稿**导致的。伴侣正常会在预合成后强制让剪映落盘一次
+这是**没让剪映保存草稿**导致的。助手正常会在预合成后强制让剪映落盘一次
 （登记写进 `draft_content.json`），如果那一步没成功，重开后剪映就会把预合成缓存当普通视频解析。
 
 自己救：在剪映里点左上角**返回草稿页**（让它保存一次），再回到那份草稿重新拖入。
@@ -189,17 +189,17 @@ python 剪映伴侣.py
 <details>
 <summary><b>说"找不到剪映专业版"？</b></summary>
 
-伴侣找剪映的顺序是：①问运行中的进程 → ②读上次自动配置记下的路径 → ③几个常见安装位置。
+助手找剪映的顺序是：①问运行中的进程 → ②读上次自动配置记下的路径 → ③几个常见安装位置。
 绿色版 / 装在别的盘 / 自定义目录可能都命中不了。
 
 右键球 →「设置剪映路径…」手动选中 `JianyingPro.exe` 即可。
-**一般用不到** —— 装的时候和每次启动时伴侣都会自己去认。
+**一般用不到** —— 装的时候和每次启动时助手都会自己去认。
 </details>
 
 <details>
 <summary><b>说"找不到草稿目录"？</b></summary>
 
-伴侣会**直接读剪映设置里记的草稿位置**（`%LOCALAPPDATA%\JianyingPro\User Data\Config\globalSetting` 里的
+助手会**直接读剪映设置里记的草稿位置**（`%LOCALAPPDATA%\JianyingPro\User Data\Config\globalSetting` 里的
 `currentCustomDraftPath`），所以你在剪映里改过草稿位置它也认得出来。
 
 真认不出来时：右键球 →「设置草稿目录…」手动指一下（一般是 `…\Projects\com.lveditor.draft`）。
@@ -224,14 +224,14 @@ python 剪映伴侣.py
 ## 项目结构
 
 ```
-jianying-precomp/
+jianying-assistant/
 ├── jy_core.py                  # 内核：窗口/按键/像素自检/备份还原/流水线
-├── 剪映伴侣.py                  # GUI：悬浮球 + 菜单 + 事件循环
+├── 剪映助手.py                  # GUI：悬浮球 + 菜单 + 事件循环
 ├── 使用说明.txt                 # 随安装包发货的面向用户的说明
-├── JianyingCompanion.spec       # PyInstaller 打包配置
-├── 剪映伴侣安装包.iss            # Inno Setup 安装包脚本
+├── JianyingAssistant.spec       # PyInstaller 打包配置
+├── 剪映助手安装包.iss            # Inno Setup 安装包脚本
 ├── version_info.txt / app.ico   # exe 版本信息与图标
-├── 重启伴侣.py                  # 开发用：杀干净 → 覆盖 → 重启 → 复核
+├── 重启助手.py                  # 开发用：杀干净 → 覆盖 → 重启 → 复核
 ├── test_guard.py                # 回归主力：红线 + 形状断言 + 行为断言
 ├── test_gui_smoke.py            # GUI 冒烟：真起一次 tk 窗口跑一遍
 ├── test_settle.py               # 文件落盘判定

@@ -1,6 +1,6 @@
 # 第三方资源声明 / Third-Party Notices
 
-本仓库主体（`jy_core.py`、`剪映伴侣.py`、`JianyingCompanion.spec`、`剪映伴侣安装包.iss`、
+本仓库主体（`jy_core.py`、`剪映助手.py`、`JianyingAssistant.spec`、`剪映助手安装包.iss`、
 测试与文档等）以 **MIT License** 发布，版权归本仓库作者所有，见 [`LICENSE`](LICENSE)。
 
 下面列出仓库里**不是**本仓库作者原创、随仓库一起分发的文件。
@@ -9,7 +9,7 @@
 
 ## 1. `ChineseSimplified.isl` —— Inno Setup 简体中文语言文件
 
-- **用途**：安装包（`剪映伴侣安装包.iss`）的 `[Languages]` 段引用它来显示中文安装向导界面。
+- **用途**：安装包（`剪映助手安装包.iss`）的 `[Languages]` 段引用它来显示中文安装向导界面。
   它是**构建期资源**，不会被打包进最终安装产物里额外分发。
 - **来源**：Inno Setup 用户贡献翻译（unofficial translations）
   <https://jrsoftware.org/files/istrans/> →

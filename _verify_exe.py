@@ -15,13 +15,13 @@ from pathlib import Path
 from PyInstaller.archive.readers import CArchiveReader, ZlibArchiveReader
 
 # ★★ 第二十八批：打包从 onefile 换成 **onedir**（启动快 ~1.2 秒，见 spec 顶部）。
-#   产物位置随之从 `dist\JianyingCompanion.exe` 变成
-#   `dist\JianyingCompanion\JianyingCompanion.exe`（依赖在旁边的 `_internal\`）。
+#   产物位置随之从 `dist\JianyingAssistant.exe` 变成
+#   `dist\JianyingAssistant\JianyingAssistant.exe`（依赖在旁边的 `_internal\`）。
 #   ⚠️ 这里**两条路径都认**（优先 onedir）—— 因为"核验脚本找不到 exe"会表现成
 #      `CArchiveReader` 报一个和打包无关的错，很容易被误读成"打包坏了"。
 _HERE = os.path.dirname(os.path.abspath(__file__))
-_ONEDIR = os.path.join(_HERE, "dist", "JianyingCompanion", "JianyingCompanion.exe")
-_ONEFILE = os.path.join(_HERE, "dist", "JianyingCompanion.exe")
+_ONEDIR = os.path.join(_HERE, "dist", "JianyingAssistant", "JianyingAssistant.exe")
+_ONEFILE = os.path.join(_HERE, "dist", "JianyingAssistant.exe")
 EXE = _ONEDIR if os.path.isfile(_ONEDIR) else _ONEFILE
 
 # ★★ onedir 下**依赖与素材不在 exe 里**，在旁边的 `_internal\`：
@@ -184,7 +184,7 @@ def frozen_pipeline_stages(co):
 
 
 DEPLOYED_CFG = os.path.join(os.environ.get("LOCALAPPDATA", ""),
-                            "JianyingCompanion", "伴侣配置.json")
+                            "JianyingAssistant", "助手配置.json")
 
 
 def deployed_overrides():
@@ -193,7 +193,7 @@ def deployed_overrides():
     ★★ 这个函数是为了一个真实踩过的坑而存在：
       「改 default_config() 的默认值」**只在配置文件还没有那个键时才生效**。
       把 auto_drag_product 默认从 True 改成 False 后，用户机器上的
-      伴侣配置.json 里已经写死了 `"auto_drag_product": true`，
+      助手配置.json 里已经写死了 `"auto_drag_product": true`，
       load_config() 用 update 覆盖默认 → 改动**零生效**，
       而 exe 值核验还全绿（因为 exe 里的默认值确实是对的）。
       ⇒ 只看 exe 里的默认值不够，必须看"最终生效值 = 配置优先，默认兜底"。
@@ -385,13 +385,13 @@ def main():
         "_自动配置结果.txt",                    # 给安装包读的结果文件
         "JIANYING=", "DRAFT=",                 # 安装包按 Pos 匹配的 ASCII 标记
         "剪映设置里记着的位置",                 # 草稿位置的来路（最准的那条）
-        "伴侣自动找到的", "沿用你手动指定的",
+        "助手自动找到的", "沿用你手动指定的",
         "已经自动写进配置：", "（你不需要做任何设置）",
         "自动配置：已经替你配好了",             # 体检里那条「你不用做任何事」
         # ★ 第十五批：找不到草稿目录时的指路文案（跨行隐式拼接后是一整条常量）
         "找不到剪映的草稿目录。\n\n"
         "剪映里改过草稿位置的话（设置 → 草稿位置），\n"
-        "请右键伴侣 →「设置草稿目录…」手动指一下。",
+        "请右键助手 →「设置草稿目录…」手动指一下。",
         "必须这份 · 换草稿会报「媒体格式不支持」",     # 副文案：为什么必须是这份
         "需要你停在草稿编辑页（在首页就双击草稿卡片进去）",
         "请双击首页上的草稿卡片打开",
@@ -406,17 +406,17 @@ def main():
     # ★ 第十四批：**跨行隐式拼接**的文案在字节码里被折成**一整条**常量，
     #   所以只能按子串查。（这些片段不出现在 jy_core 的注释/docstring 里，
     #   不会像第十二批那样被同名文档字符串假绿。）
-    _need_core_sub = ["右键伴侣 →「设置剪映路径…」手动指一下。",
+    _need_core_sub = ["右键助手 →「设置剪映路径…」手动指一下。",
                       # ★ 第十六批：两句都改成"会读剪映设置"，这里跟着更新
                       #   （旧句子「如果剪映里改过草稿位置…」已经不再出现）。
-                      "伴侣会重新自动找一遍（**也会去读剪映设置里记的草稿位置**）；",
-                      "两边都没有，才需要右键伴侣 →「设置草稿目录…」手动指一下。",
+                      "助手会重新自动找一遍（**也会去读剪映设置里记的草稿位置**）；",
+                      "两边都没有，才需要右键助手 →「设置草稿目录…」手动指一下。",
                       # ★ 第十六批：安装包念给用户的那段（format_autosetup 拼出来）
-                      "装好之后伴侣下次启动会自己认，不用你指路。",
+                      "装好之后助手下次启动会自己认，不用你指路。",
                       # ★ 第十七批：这句夹在 f-string 的跨行隐式拼接里，
                       #   字节码里是**和前后文合并后的一整条**常量 → 只能按子串查。
                       #   （全源码只出现这一次，不在任何注释/docstring 里，不会假绿。）
-                      "中止时伴侣会自动还原，不会给你留一个半残的草稿。"]
+                      "中止时助手会自动还原，不会给你留一个半残的草稿。"]
     _ctxt_miss += [f"{t}(子串)" for t in _need_core_sub if not any(t in s for s in _cconsts)]
     print("内核必需文案缺失:", _ctxt_miss if _ctxt_miss else "无")
     flag_ok = flag_ok and (not _ctxt_miss)
@@ -424,10 +424,10 @@ def main():
     gui = None
     for name in arc.toc:
         base = os.path.basename(str(name)).lower()
-        # ★ 第十批修：PyInstaller 6.x 把主脚本存成**没有扩展名**的条目 `剪映伴侣`，
-        #   旧匹配（endswith "剪映伴侣.py"/"companion"）**一条都命中不了** →
+        # ★ 第十批修：PyInstaller 6.x 把主脚本存成**没有扩展名**的条目 `剪映助手`，
+        #   旧匹配（endswith "剪映助手.py"/"assistant"）**一条都命中不了** →
         #   返回 None → GUI 那半边代码从来没被核验过（等于白核）。这里补上精确名。
-        if base in ("剪映伴侣", "剪映伴侣.py", "剪映伴侣.pyc") or "companion" in base:
+        if base in ("剪映助手", "剪映助手.py", "剪映助手.pyc") or "assistant" in base:
             gui = name
             break
     print("主脚本条目:", gui)
@@ -492,10 +492,6 @@ def main():
                  #   —— 少了这几条，"125% 屏被系统拉伸 1.25 倍"那个根因就回来了
                  "_enable_dpi_awareness", "_dpi_awareness_state", "_set_pmv2",
                  "dpi_ratio", "_apply_scale", "_sync_dpi",
-                 # ★★ 第二十五批（球心动图："没运行时就不动，正在运行时就动"）
-                 #   判据 / 帧号来源 / 时钟推进 / 三个状态位
-                 "is_working", "_avatar_frame", "_tick_avatar",
-                 "_working", "_work_t0", "_avatar_idx",
                  # ★★ 第二十七批（"总觉得卡卡的" · 运行时性能）
                  #   `_anim_kick` 是"按**周期**倒推间隔"的唯一落点：少了它 /
                  #   退回无条件 `after(ANIM_FRAME_MS)`，重帧的帧周期就从
@@ -504,7 +500,7 @@ def main():
         gmiss = [n for n in gmust if n not in gnames]
         #   ★★ 第二十六批：**值**核验（不是名字）—— 这一批的可见改动就是"球变大"，
         #     而 `BASE_H` 这个名字从第一版起就没变过，光看名字永远核不出来。
-        #     做法见 `剪映伴侣.py` 里那段注释：把原来的元组赋值拆成三行，
+        #     做法见 `剪映助手.py` 里那段注释：把原来的元组赋值拆成三行，
         #     否则 `module_consts` 的 "LOAD_CONST 紧跟 STORE_NAME" 根本配不上。
         gmc = module_consts(gco)
         gvals = {"BASE_H": 56, "BASE_R": 16, "BASE_W": 238,
@@ -516,7 +512,7 @@ def main():
         gbad = []
         for k, want in gvals.items():
             got = gmc.get(k, "<缺>")
-            print(f"   剪映伴侣.{k} = {got!r}  (期望 {want!r})")
+            print(f"   剪映助手.{k} = {got!r}  (期望 {want!r})")
             if got != want:
                 gbad.append(k)
         # 文案常量核验：菜单标签 / 空闲提醒必须真在 exe 里。
@@ -583,15 +579,6 @@ def main():
                  "_mask", "_vgrad", "pad_for", "default_layout", "card_metrics",
                  "CARD_TOP", "CARD_BOT", "GROOVE", "SURF_TOP", "SURF_BOT",
                  "SHADOW_PAD", "SHADOW_BLUR", "SHADOW_ALPHA", "SHADOW_DY",
-                 # ★★ 第二十五批：球心动图（懒加载 / 时间轴 / 直径 / 贴图）
-                 "avatar_frames", "avatar_count", "avatar_index_at",
-                 "avatar_d", "draw_avatar", "_fit_square", "res_dir",
-                 "AVATAR_FILE", "AVATAR_INSET",
-                 # ★★ 第二十六批：线稿那条路（判据 / 掩码 / 读取口）
-                 #   少一个的后果都是静默的：判据没了 → 线稿被当照片贴成黑圆；
-                 #   `avatar_kind` 没了 → 探针/测试没法查"这张素材走的哪条路"。
-                 "classify_avatar", "_to_ink_mask", "avatar_kind",
-                 "AVATAR_INK", "AVATAR_PHOTO", "AVATAR_INK_RGB",
                  # ★★ 第二十七批（"总觉得卡卡的" · 运行时性能）
                  #   这一批**只加缓存、不改算法** ⇒ 屏幕上"看起来毫无变化"，
                  #   所以只能靠"缓存到底在不在"来证明改动真进了包。
@@ -605,12 +592,7 @@ def main():
         #     三条判据和 `test_guard` 的 ㉳-11/13/14 完全同源。
         uvals = {"SURF_TOP": (68, 68, 79), "SURF_BOT": (36, 36, 43),
                  "CARD_TOP": (76, 76, 86), "CARD_BOT": (44, 44, 52),
-                 "GROOVE": (0, 0, 0, 88),
-                 # ★★ 第二十六批：线稿那条路的三个数（判据阈值 / 线色 / 增益）。
-                 #   被改回旧值就等于"这张线稿又被当照片贴成黑圆"，而屏幕上
-                 #   只是"球心里黑了一块"，不报任何错。
-                 "AVATAR_INK_BLACK": 0.85, "AVATAR_INK_LIT": 0.10,
-                 "AVATAR_INK_GAIN": 1.7, "AVATAR_INK_RGB": (238, 240, 247)}
+                 "GROOVE": (0, 0, 0, 88)}
         bad = []
         for k, want in uvals.items():
             got = mc.get(k, "<缺>")
@@ -634,22 +616,6 @@ def main():
         if not (isinstance(sal, int) and sal <= 120 and isinstance(sdy, (int, float))
                 and sdy >= 3.0):
             bad.append("投影过重/过贴")
-        #   ★★ 动图素材必须真的在包里。这条**只能查 toc**：二进制资源不在
-        #     code object 里（`umust` 那套名字核验**永远看不到它**）——
-        #     `datas` 漏带的话，全部名字都在、全部取值都对，只有球心永远是个剪字。
-        #   ★ PyInstaller 6.x 的 `arc.toc` 是 **dict**（键=条目名），不是 list ——
-        #     按 list 写 `e[0]` 会取到**名字的第一个字符**，于是"资源明明在包里"
-        #     却报缺失（我自己先踩了一次）。名字里用的是反斜杠，统一成正斜杠再比。
-        #   ★★ 第二十八批：onedir 下素材**不在 exe 的 toc 里**，在 `_internal\`。
-        #      所以这里改成问 `payload_entries()`（它自己知道该查哪儿）。
-        #      只查 toc 会在 onedir 上报"素材没打进包"——**假红**，而且是那种
-        #      "看着很有道理所以差点就信了"的假红（本批实测撞到过）。
-        _names = {n for n, _s in payload_entries()}
-        gif_ok = any(n.endswith("ball_avatar.gif") for n in _names)
-        print("动图资源 ball_avatar.gif 打进包了:", gif_ok,
-              "(查 %s)" % ("_internal/ (onedir)" if ONEDIR else "exe 的 CArchive toc"))
-        if not gif_ok:
-            bad.append("动图资源没打进包（datas 漏带）")
         print("渲染层必需名字缺失:", umiss if umiss else "无")
         print("渲染层取值不对:", bad if bad else "无")
         ur_ok = (not umiss) and (not bad)
