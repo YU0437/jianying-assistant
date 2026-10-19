@@ -8,7 +8,7 @@ r"""回归测试：弹窗归类规则 + 纯物理辅助流程的配置红线。
      尺寸正好落在那个区间 → 被当成会员弹窗关掉、还写进学习表 → 之后每弹一次广告
      都误触发"自动开跑"。
      现在：会员弹窗只看标题关键词；广告单独归一类（只关不跑）。
-  B. 2026-09-18 用户红线：剪映伴侣 = **纯快捷键物理辅助**。
+  B. 2026-09-18 用户红线：剪映助手 = **纯快捷键物理辅助**。
      红线分两层（同日二次定稿）：
        · 绝对禁地：**产物文件**（`Resources\combination\<GUID>_video.mp4`）——
          禁止任何解码 / 转码 / 解密 / 改写 / 删除，全程一个字节不动；
@@ -29,9 +29,9 @@ sys.path.insert(0, str(HERE))
 
 import jy_core as core  # noqa: E402
 
-spec = importlib.util.spec_from_file_location("companion_gui", HERE / "剪映伴侣.py")
+spec = importlib.util.spec_from_file_location("assistant_gui", HERE / "剪映助手.py")
 gui = importlib.util.module_from_spec(spec)
-sys.modules["companion_gui"] = gui
+sys.modules["assistant_gui"] = gui
 spec.loader.exec_module(gui)
 
 fails = []
@@ -269,7 +269,7 @@ check("红线：还原**不写产物**（源码里不出现 combination / *_vide
 check("还原写回前会等剪映真的起来（用 wait_jianying 系的重启路径）",
       "_restart_and_enter" in _rd_src, True)
 
-_gui_src = open(Path(__file__).with_name("剪映伴侣.py"), encoding="utf-8").read()
+_gui_src = open(Path(__file__).with_name("剪映助手.py"), encoding="utf-8").read()
 check("右键菜单里有「还原草稿」入口，且真的接到 core.restore_draft",
       "还原草稿" in _gui_src and "target=core.restore_draft" in _gui_src, True)
 check("★ 还原入口真的**加进了菜单**（以前只写了函数没接菜单，用户右键找不到）",
@@ -284,7 +284,7 @@ check("★ 备份失败时如实告知「导出后无法自动还原」（不假
       "无法自动还原" in _rp_src or "没能做出草稿备份" in _rp_src, True)
 
 print("[12] ★ 自动打开原草稿：封面匹配定位卡片 + 三重护栏（2026-09-18 实测通过）")
-# 用户要求"伴侣自己打开原草稿"。剪映没有非鼠标入口，所以只能真点一下卡片；
+# 用户要求"助手自己打开原草稿"。剪映没有非鼠标入口，所以只能真点一下卡片；
 # 但这一下必须**又准又安全**：封面匹配认卡片 → WindowFromPoint 复核 → .locked 验证。
 from PIL import Image as _Img, ImageDraw as _Draw  # noqa: E402
 
@@ -356,7 +356,7 @@ check("默认**关闭**「自动打开原草稿」（用户定案：宁可自己
 _eep_src = _inspect.getsource(core.ensure_edit_page)
 check("ensure_edit_page 支持 draft_dir / auto_open 并会调用自动打开",
       "auto_open" in _eep_src and "open_draft_by_card" in _eep_src, True)
-# ★ 关掉自动打开时，伴侣必须**点名草稿 + 说清怎么打开**（第十三批：用户反馈
+# ★ 关掉自动打开时，助手必须**点名草稿 + 说清怎么打开**（第十三批：用户反馈
 #   "提示不够（比如让用户打开草稿等）"——原来只说"请打开草稿"，没说在哪、怎么开；
 #   剪映的草稿**只能双击首页卡片**进，不写清楚用户就会干等两分钟）。
 check("关掉自动打开时会点名草稿、说清怎么打开、等用户自己点（不碰鼠标）",
@@ -692,7 +692,7 @@ _fei_src = _inspect.getsource(core.find_explorer_item)
 _drag_src = _inspect.getsource(core.drag_file_into_jianying)
 _uia_all = _uli_src + _fei_src + _drag_src
 _core_all = (HERE / "jy_core.py").read_text(encoding="utf-8")
-_gui_all = (HERE / "剪映伴侣.py").read_text(encoding="utf-8")
+_gui_all = (HERE / "剪映助手.py").read_text(encoding="utf-8")
 _xl_src = _inspect.getsource(core.extract_latest)
 
 check("UIA 读条目存在（uia_list_items / find_explorer_item）",
@@ -787,8 +787,8 @@ check("★ 三种收尾分开写：关掉 / 拖成功 / 拖失败，理由不同
                                 "自动拖入**没成功**")), True)
 check("★ 手动拖的提示里带「拖前按 Home 归零」（实测：往空白处丢是按播放头落位）",
       "按一下 **Home**" in _rp_src and "按播放头落位" in _rp_src, True)
-check("★ 流水线结尾明说「伴侣什么都不做，会一直等你」+ 导出后怎么还原",
-      "伴侣什么都不做" in _rp_src and "一直等你" in _rp_src
+check("★ 流水线结尾明说「助手什么都不做，会一直等你」+ 导出后怎么还原",
+      "助手什么都不做" in _rp_src and "一直等你" in _rp_src
       and "等你导出完成" in _rp_src and "还原草稿" in _rp_src, True)
 # ★ 2026-09-18 用户实测反馈："打开文件夹之前没有清空掉草稿内容，并且没有等待用户导出，
 #   导出后帮用户还原的指示"。三处修复各自钉一条断言（防回退）：
@@ -798,7 +798,7 @@ check("★ 顺序修复：**先清空时间线、再打开文件夹**（资源�
       and "open_folder_and_select" not in _rp_src.split("_clear_timeline(cfg")[0], True)
 check("★ 清空失败就**不再往下走**（不动时间线、不打开文件夹，只教用户手动）",
       "清空这一步没通过自检，就没往下走" in _rp_src
-      and "没有被伴侣改动" in _rp_src, True)
+      and "没有被助手改动" in _rp_src, True)
 
 print("[16b] ★★ 清空时间线「假成功」事故（2026-09-18 晚）的三条防回退")
 # 用户实测反馈："清空原本内容有问题好像，没成功，然后剪映无响应了"。
@@ -981,11 +981,11 @@ check("③ _pump 必须处理 selfcheck 回包（否则体检完永远不弹窗�
 check("④ 运行日志封顶 2MB，不在别人机器上无限涨",
       "2 * 1024 * 1024" in _gui_all, True)
 _si_src = _inspect.getsource(gui.ensure_single_instance)
-check("⑤ 防多开两种进程名都认（安装版「剪映伴侣.exe」/ 绿色版 JianyingCompanion.exe）",
-      "剪映伴侣" in _si_src and "jianyingcompanion" in _si_src.lower(), True)
+check("⑤ 防多开两种进程名都认（安装版「剪映助手.exe」/ 绿色版 JianyingAssistant.exe）",
+      "剪映助手" in _si_src and "jianyingassistant" in _si_src.lower(), True)
 
 # ---- 17f. 安装包：卸载/升级不能把用户配置删掉 ----
-_iss_p = HERE / "剪映伴侣安装包.iss"
+_iss_p = HERE / "剪映助手安装包.iss"
 _iss = _iss_p.read_text(encoding="utf-8") if _iss_p.exists() else ""
 # ★ 只看**生效的指令行**，去掉 `;` 注释行 —— 否则注释里写一句
 #   「别写成 filesandordirs {app}」就会把这条断言带红（真踩过）。
@@ -1147,7 +1147,7 @@ check("② 做新备份时把标记清回 False（新一轮导出照常能还原
       and "if remember:" in _bd_src
       and _bd_src.find('cfg["_backup_consumed"] = False')
       > _bd_src.find("if remember:"), True)
-check("③ ★ 备份原件**不删**（只清状态位，红线：伴侣不删文件）",
+check("③ ★ 备份原件**不删**（只清状态位，红线：助手不删文件）",
       "unlink" not in _rd_src and "rmtree" not in _rd_src, True)
 check("④ ★ 二次还原前必须弹确认（别无声无息覆盖新改动）",
       "backup_consumed(self.cfg)" in _gui_restore
@@ -1194,7 +1194,7 @@ check("④ 失败文案指向了那个新入口（不然用户还是找不到）
 check("⑤ 还原类失败文案也指向备份文件夹（「手动拷回去」得先找得到）",
       _inspect.getsource(core.restore_draft).count("「打开草稿备份文件夹」") >= 2, True)
 
-# ---- 19c. 空闲态提示"上次那轮还没还原"（关掉伴侣/重启电脑后提示不能断）----
+# ---- 19c. 空闲态提示"上次那轮还没还原"（关掉助手/重启电脑后提示不能断）----
 import types as _types  # noqa: E402
 _DEFAULT_SUB = "预合成 · 存草稿 · 清空原内容 · 你手动拖入"
 _HINT_SUB = "上次那轮还没还原 · 右键「还原草稿」"
@@ -1258,7 +1258,7 @@ check("⑪ 回到原位时候选要作废（别拿旧候选配新时间戳）",
       "_cand_s = None" in _mr, True)
 
 # ---- ⑫★★ 把用户日志**原样重放**：旧逻辑翻 30 次，新逻辑一次都不翻 ----
-# 序列 = 部署版 `%LOCALAPPDATA%\JianyingCompanion\运行日志.txt` 第 2~33 行逐条转写
+# 序列 = 部署版 `%LOCALAPPDATA%\JianyingAssistant\运行日志.txt` 第 2~33 行逐条转写
 _REPLAY_PAIRS = [
     (816, 864), (830, 816), (830, 864), (878, 864), (830, 864), (878, 816),
     (830, 816), (830, 864), (878, 864), (830, 864), (830, 816), (830, 864),
@@ -1840,11 +1840,11 @@ check("⑤ ★ 兜底有闸门：API 成功就不许再起 explorer（否则照�
 check("⑥ ★ 认窗口时先按标题认「该在的那个文件夹」（官方 API 复用窗口，压根没有新 hwnd）",
       "named" in _ofs_src and "key in t" in _ofs_src, True)
 
-# ---- 22b. 顺手收掉"历史遗留的重复窗口"（只动伴侣自己开的那些） ----
+# ---- 22b. 顺手收掉"历史遗留的重复窗口"（只动助手自己开的那些） ----
 _dedup_src = _inspect.getsource(core._close_dup_win_impl)
 check("⑦ 去重只碰「标题含该文件夹名」的窗口",
       "key not in title" in _dedup_src, True)
-check("⑧ ★ 只关**伴侣自己规整过**的尺寸（1000x620±30）；用户自己拉的/最大化的一律不动",
+check("⑧ ★ 只关**助手自己规整过**的尺寸（1000x620±30）；用户自己拉的/最大化的一律不动",
       "FOLDER_WIN_W" in _dedup_src and "FOLDER_WIN_H" in _dedup_src
       and "> 30" in _dedup_src, True)
 check("⑨ ★ 尺寸比较必须在 _dpi_aware() 里做（实测 125% 缩放会读成 800x496，否则永不命中）",
@@ -2013,7 +2013,7 @@ check("⑥ 设置完立刻落盘（否则下次开机又找不到）",
       "save_config" in _pdr_src, True)
 
 # ---- 24b. ★★ 失败文案不许再让用户"手改配置文件"（求助回路闭环）----
-#   旧文案原话：「或把路径填进 伴侣配置.json 的 draft_root」—— 让用户改 JSON = 没有出路。
+#   旧文案原话：「或把路径填进 助手配置.json 的 draft_root」—— 让用户改 JSON = 没有出路。
 #   ★ 一律先滤掉**整行注释**再查：这里的新注释本身就写着那句反面教材，
 #     不滤就会把自己写的说明当成"还在犯的错"（本项目踩过多次，见 [17f]）。
 def _live_src(fn):
@@ -2026,8 +2026,8 @@ _need_no_json = {
     "extract_latest": _live_src(core.extract_latest),
     "env_selfcheck": _live_src(core.env_selfcheck),
 }
-check("⑦ ★ 三处「找不到草稿目录」的文案都不再提 伴侣配置.json",
-      [k for k, v in _need_no_json.items() if "伴侣配置.json" in v], [])
+check("⑦ ★ 三处「找不到草稿目录」的文案都不再提 助手配置.json",
+      [k for k, v in _need_no_json.items() if "助手配置.json" in v], [])
 check("⑧ ★ 而且都指向了菜单里的那个入口（文案↔入口闭环）",
       [k for k, v in _need_no_json.items() if "设置草稿目录" not in v], [])
 
@@ -2107,11 +2107,20 @@ finally:
     (core.standard_draft_roots, core.save_config,
      core.jianying_setting_draft_path) = _osdr, _osave2, _ojy2
 #   ★ 父目录防护要能被单独的纯函数验出来（否则上面那条只是「字符串在源码里」）
-check("㉔ ★ _is_parent_root：把 …\\Projects 认成父目录（因为它里面还有 com.lveditor.draft）",
-      callable(getattr(core, "_is_parent_root", None))
-      and core._is_parent_root(core.standard_draft_roots()[1]), True)
-check("㉕ 反向对照：真正的草稿根不是父目录",
-      core._is_parent_root(core.standard_draft_roots()[0]), False)
+_roots_orig = core.standard_draft_roots
+try:
+    with tempfile.TemporaryDirectory() as _td:
+        _projects = Path(_td) / "Projects"
+        _draft_root = _projects / "com.lveditor.draft"
+        _draft_root.mkdir(parents=True)
+        core.standard_draft_roots = lambda: [_draft_root, _projects]
+        check("㉔ ★ _is_parent_root：把 …\\Projects 认成父目录（因为它里面还有 com.lveditor.draft）",
+              callable(getattr(core, "_is_parent_root", None))
+              and core._is_parent_root(_projects), True)
+        check("㉕ 反向对照：真正的草稿根不是父目录",
+              core._is_parent_root(_draft_root), False)
+finally:
+    core.standard_draft_roots = _roots_orig
 
 # ---- 24f. 候选表只有一份（两份实现一定会慢慢跑偏）----
 check("㉖ ★ 10 条盘根候选只写在 standard_draft_roots 里，resolve_root 不再内联",
@@ -2187,7 +2196,7 @@ check("⑥ 文件里路径是双反斜杠字面量 → 要还原成单反斜杠"
       '.replace("\\\\\\\\", "\\\\")' in _jy_src, True)
 
 # ---- 26c. ★★ 自动配置只写"机器事实"，**绝不把内置默认值抄成文件** ----
-#   这条是第九批那条老规矩（[Files] 段"故意不写 伴侣配置.json"）的落地守卫：
+#   这条是第九批那条老规矩（[Files] 段"故意不写 助手配置.json"）的落地守卫：
 #   autodetect_env() 手里的 cfg 是 load_config() 的产物（默认值打底），
 #   整份 save_config() 就等于把今天的默认值钉死在用户机器上。
 check("⑦ ★ 落盘白名单只有 4 个键（剪映路径 / 草稿目录 / 两个记账位）",
@@ -2198,7 +2207,7 @@ check("⑧ ★ 自动配置走的是白名单合并，不是 save_config",
       and "save_config(cfg)" not in _inspect.getsource(core.autodetect_env), True)
 
 _t26 = Path(tempfile.mkdtemp(prefix="autosetup26_"))
-_cf26 = _t26 / "伴侣配置.json"
+_cf26 = _t26 / "助手配置.json"
 _keep = (core.config_path, core.find_jianying_exe, core.jianying_setting_draft_path,
          core._pick_standard_root)
 _dr26 = _t26 / "draftroot"
@@ -2259,7 +2268,7 @@ check("⑭ ★ 手动指的已经不在 → 清掉并让自动值接手（死路
 
 # ---- 26e. 什么都认不到：不许凭空造配置文件、也不许说"没问题" ----
 _t26b = Path(tempfile.mkdtemp(prefix="autosetup26b_"))
-_cf26b = _t26b / "伴侣配置.json"
+_cf26b = _t26b / "助手配置.json"
 core.config_path = lambda: _cf26b
 core.find_jianying_exe = lambda cfg=None: None
 core.jianying_setting_draft_path = lambda: None
@@ -2305,7 +2314,7 @@ check("⑳ 正文里没有 markdown 星号（安装包弹的是原生 MsgBox）"
 #   体检每次点都会走一遍自动配置；如果"没变化也写"，配置文件的修改时间就一直在跳，
 #   而且 `_autosetup_at` 会变成"最后一次点击时间"，本来是想让它表示"最后配成功的时间"。
 _t26c = Path(tempfile.mkdtemp(prefix="autosetup26c_"))
-_cf26c = _t26c / "伴侣配置.json"
+_cf26c = _t26c / "助手配置.json"
 _fake_exe = _t26c / "FakeJianyingPro.exe"
 _fake_exe.write_text("x", encoding="utf-8")
 core.config_path = lambda: _cf26c
@@ -2368,7 +2377,7 @@ check("㉚ 体检的草稿目录文案也如实说了「会去读剪映设置」
       "也会去读剪映设置" in _inspect.getsource(core.draft_root_status), True)
 
 # ---- 26j. 安装包：装完自己跑 --autosetup 并把结果念给用户 ----
-_iss_all = (HERE / "剪映伴侣安装包.iss").read_text(encoding="utf-8")
+_iss_all = (HERE / "剪映助手安装包.iss").read_text(encoding="utf-8")
 check("㉛ ★ 安装包装完调用 --autosetup（这是「不让用户多余操作」的落点）",
       "'--autosetup'" in _iss_all, True)
 check("㉜ ★ 静默跑、且等它结束（SW_HIDE + ewWaitUntilTerminated）",
@@ -2445,7 +2454,7 @@ check("⑫ ★ 检查点 ck() 只在动作**之间**，不许在动作中途丢�
       "def ck():" in _rp17 and "_cancelled(cancel)" in _rp17, True)
 
 # ---- 27c. GUI：入口、置灰、以及"中止"和"等你导出"必须分开 ----
-_gui17 = (HERE / "剪映伴侣.py").read_text(encoding="utf-8")
+_gui17 = (HERE / "剪映助手.py").read_text(encoding="utf-8")
 check("⑬ GUI 有 _start_pipeline（起流程时挂令牌）",
       "def _start_pipeline(self):" in _gui17, True)
 check("⑭ GUI 有 _abort_pipeline", "def _abort_pipeline(self):" in _gui17, True)
@@ -2589,7 +2598,7 @@ finally:
     core._jianying_running = _orun28
 
 # ---- GUI 侧：形状 + 「只提醒不动手」红线 ----
-_gsrc28 = open("剪映伴侣.py", encoding="utf-8").read()
+_gsrc28 = open("剪映助手.py", encoding="utf-8").read()
 check("㉫ 菜单里有「导出守望」开关", '"exportwatch"' in _gsrc28, True)
 check("㉬ 进入「等你导出」时会挂守望（_start_export_watch）",
       "_start_export_watch()" in _gsrc28, True)
@@ -2690,7 +2699,7 @@ finally:
     core.product_guid = _opg29
 
 # ---- GUI 侧形状 ----
-_gsrc29 = open("剪映伴侣.py", encoding="utf-8").read()
+_gsrc29 = open("剪映助手.py", encoding="utf-8").read()
 check("㉪ 菜单有「批量处理草稿…」级联入口", '"批量处理草稿…"' in _gsrc29, True)
 check("㉫ 子菜单点开时现扫现填（postcommand）", "postcommand=self._fill_batch_menu" in _gsrc29,
       True)
@@ -2764,7 +2773,7 @@ finally:
     core.find_export_dialog = _ofd30
 
 # ---- GUI 侧形状 ----
-_gsrc30 = open("剪映伴侣.py", encoding="utf-8").read()
+_gsrc30 = open("剪映助手.py", encoding="utf-8").read()
 check("㉨ 菜单有「全自动导出（实验）」开关", '"fullauto"' in _gsrc30, True)
 check("㉩ 「等你导出」后挂钩全自动（after 2.5s 稳定延迟）",
       "self.root.after(2500, self._run_full_auto)" in _gsrc30, True)
@@ -2976,310 +2985,15 @@ check(f"㉳-15 ★ `ring_inset` 单一来源：`ui_metrics()` 与 `_ur.default_l
 
 
 # ══════════════════════════════════════════════════════════════════════
-# ㉴ 第二十五批：球心换成动图（用户："把剪的图片换成这个，
-#   没运行时就不动，正在运行时就动"）
+# 静态悬浮球：动图已移除
 # ══════════════════════════════════════════════════════════════════════
-# 这一组的立意：**"动不动"是个可以离线钉死的事实**，不该只活在肉眼观察里。
-# 三条最关键：
-#   ① 判据 `is_working` 的取值表 —— 它决定"哪些状态算在跑"（全项目最容易被改错的一处：
-#      `kind="busy"` 有 25 个调用点，其中一半是"开关已切"的通知，那些**不该**跳舞）；
-#   ② 跑起来时进度环**一个像素都没被挡**（头像是待机 48px、环内沿只有 37.5px ——
-#      不缩就会把环整个盖掉，这不是"不好看"，是"看不到进度"，必须由测试兜着）；
-#   ③ 帧号进了缓存键（不然几百帧全命中同一张图，屏上永远一个定格）。
-#
-# ★★ 第二十六批：素材从**照片**换成了**线稿**（"换成这个，球再稍微大点"），
-#   于是这一组多了两件事：
-#   ④ 两条路（照片贴圆片 / 线稿把黑当透明画线）**都**要留着且都对 ——
-#      `classify_avatar` 是纯函数，测试直接喂合成图，不靠"当前仓库里恰好是哪张素材"；
-#   ⑤ 所有几何断言**从 `gui.BASE_H` 和 `default_layout()` 推**，不再写死 48/40/25 ——
-#      这一批恰好动了球径（48→56），写死的数全得跟着改一遍，那不叫测试叫抄写。
-_ur._AV = None
-_ur._AV_DISC.clear()
-_ur._CACHE.clear()
-
-_BD = int(gui.BASE_H)                                  # 球径（1×）= 横条高
-_RI = _ur.default_layout(1.0)["ring_inset"]            # 环心离球边
-_ICON = _ur.default_layout(1.0)["icon_d"]
-_D_IDLE = _ur.avatar_d(_BD, _RI, ring=False)
-_D_RING = _ur.avatar_d(_BD, _RI, ring=True)
-_HALF = _BD / 2.0
-_RING_R = _HALF - _RI                                  # 环心半径
-_RING_IN = _HALF - _RI - 1.25                          # 环内沿半径（1.25 = 线宽一半）
-
-# ㉴-1 `is_working` 取值表。
-#   hold=0 → 真在跑；hold>0 → 只是一条会自己收回的通知。
-_wtab = [(("busy", 0), True), (("busy", 5), False), (("busy", 10), False),
-         (("idle", 0), False), (("ok", 0), False), (("err", 0), False),
-         (("ask", 0), False)]
-check(f"㉴-1 ★★ 「正在运行」判据 `is_working(kind, hold)`（busy+hold=0 才算在跑）"
-      f"  [{[gui.is_working(k, h) for k, h in (t[0] for t in _wtab)]}]",
-      [gui.is_working(k, h) for (k, h) in (t[0] for t in _wtab)],
-      [t[1] for t in _wtab])
-#   ★ 反向：源码里不许出现"用 pct / _cancel 当判据"的旧写法（那两个都试过、都不行，
-#     理由写在 `is_working` 的 docstring 里）。只查函数体（去掉 docstring）。
-_wiw = code_of(gui.is_working)
-check("㉴-2 ★ 判据**只**看 hold，不许回退成 `pct is not None` /"
-      " `_cancel is not None`（后者漏掉 取文件/体检/守望 三条路）",
-      ("pct" not in _wiw and "_cancel" not in _wiw), True)
-
-# ㉴-3 素材真的在仓库里（源码运行时也得有；打包那条由 `_verify_exe` 查 toc）。
-check("㉴-3 ★ 动图素材 `ball_avatar.gif` 在项目里，且 `avatar_path()` 指得到",
-      ((HERE / "ball_avatar.gif").exists() and _ur.avatar_path().exists()
-       and _ur.avatar_path().name == "ball_avatar.gif"
-       and _ur.res_dir() == HERE), True)
-# ㉴-4 打包清单带上了它（datas 漏带 = 球心永远是个剪字，且**不报错**）。
-_spec_txt = (HERE / "JianyingCompanion.spec").read_text(encoding="utf-8")
-check("㉴-4 ★★ spec 的 `datas` 把动图打进包（漏带不报错，只是球心永远是个剪字）",
-      (("ball_avatar.gif" in _spec_txt) and ("datas=[(" in _spec_txt)), True)
-
-# ㉴-5 时间轴按 GIF **自己的**逐帧时长建（不是硬编码 100ms）。
-#   ★ 断言全部从 `_ur._AV_MS` / `_AV_TOTAL` 推：这一批素材从 100ms 换成了 80ms，
-#     写死"100ms 处是第 1 帧"就会变成抄写而不是测试。
-_nfr = _ur.avatar_count()
-_ms = _ur._AV_MS
-check(f"㉴-5 帧数与时间轴  [帧数 {_nfr} · 每帧 {_ms[1] - _ms[0]}ms · 一轮 {_ur._AV_TOTAL}ms]",
-      (_nfr >= 2
-       and _ur.avatar_index_at(0) == 0
-       and _ur.avatar_index_at(_ms[1] - 1) == 0
-       and _ur.avatar_index_at(_ms[1]) == 1
-       and _ur.avatar_index_at(_ur._AV_TOTAL) == 0), True)
-check("㉴-6 ★ 帧号**进缓存键**：换一帧就必须换一张图（不然屏上一个定格）",
-      (len({hash(_ur.render(_BD, _BD, _HALF, scale=1.0, kind="idle", glyph="",
-                            ball_a=1.0, pill_a=0.0, avatar=i).tobytes())
-            #   ★ 只抽 24 帧（347 帧全渲一遍要好几秒）：抽出来的这一组
-            #     两两不同就足以证明"帧号真的进了键"。
-            for i in range(0, _nfr, max(1, _nfr // 24))}) == len(range(0, _nfr, max(1, _nfr // 24)))), True)
-
-# ㉴-7 头像直径：待机填满球心、跑起来缩进环内。
-check(f"㉴-7 ★★ 跑起来时头像直径缩到**环内沿以内**（否则 {_D_IDLE:.0f}px 会把 {_BD}px 球里的"
-      f" 进度环整个盖住 → 看不到进度）  [待机 {_D_IDLE:.0f} / 环 {_D_RING:.0f} vs 内沿 {_RING_IN * 2:.1f}]",
-      (_D_IDLE > _RING_IN * 2 and _D_RING < _RING_IN * 2
-       and abs(_D_IDLE - (_BD - 2 * _ur.AVATAR_INSET)) < 1e-6), True)
-
-# ㉴-8 ★★ 跑起来时**进度环一个像素都没被挡**（直接对像素断言，不看截图）。
-def _shot(**kw):
-    kw.setdefault("glyph", "")
-    return _ur.render(_BD, _BD, _HALF, scale=1.0, ball_a=1.0, pill_a=0.0, **kw)
-
-_noav = _shot(kind="busy", pct=40, glyph="40")
-_av = _shot(kind="busy", pct=40, avatar=3)
-_p1, _p2 = _noav.load(), _av.load()
-_C = _HALF + _ur.pad_for(1.0)
-_band = _inner = 0
-for _y in range(_noav.size[1]):
-    for _x in range(_noav.size[0]):
-        _rr = math.hypot(_x - _C, _y - _C)
-        _dd = max(abs(_p1[_x, _y][_i] - _p2[_x, _y][_i]) for _i in range(4))
-        if _RING_R - 2 <= _rr <= _RING_R + 2:          # 环带（环心 ±2）
-            _band = max(_band, _dd)
-        elif _rr <= (_D_RING / 2.0 - 4):               # 头像内部（肯定被动过）
-            _inner = max(_inner, _dd)
-check(f"㉴-8 ★★ 跑起来时进度环**一个像素都没被挡**（环带逐像素最大差必须是 0）"
-      f"  [环带 r={_RING_R}±2 差 {_band} · 头像内部差 {_inner}]",
-      (_band == 0 and _inner > 30), True)
-
-# ㉴-9 ★ 待机头像**整块都在球心那个圆里**（不许越出球）。
-#   ★ 怎么量出"头像占地"：拿 **同一颗空球**（`glyph=""`、无动图）当底，
-#     逐像素求差 —— 差出来的就**只有**头像，不掺内壁高光/球边那一圈。
-#     （先用"亮度>150"量过一版，被球顶那条 122 的受光边蹭到，量成 40×43 的假红。）
-#   ★★ 这一条在第二十六批**换了立意**：照片路是"一个填满的正方形圆片"，
-#     线稿路是"圆里几笔线" —— 两者共同的不变量只剩"**不越出那个圆**"。
-#     所以这里断言的是：差异像素全在头像圆内（留 1px 给抗锯齿），
-#     且**确实画了东西**（不能是"什么都没画"也判绿）。
-_blank = _shot(kind="idle")
-_idle_im = _shot(kind="idle", avatar=0)
-_bp, _ip = _blank.load(), _idle_im.load()
-_foot = [(x, y) for y in range(_idle_im.size[1]) for x in range(_idle_im.size[0])
-         if max(abs(_bp[x, y][_i] - _ip[x, y][_i]) for _i in range(4)) > 2]
-_spill = [q for q in _foot if math.hypot(q[0] - _C, q[1] - _C) > _D_IDLE / 2.0 + 1.0]
-check(f"㉴-9 ★ 待机画面（直径 {_D_IDLE:.0f}px）**全落在球心圆内**，且确实画了东西"
-      f"  [差异像素 {len(_foot)} 个 · 越界 {len(_spill)} 个]",
-      (len(_foot) > 200 and not _spill), True)
-
-# ㉴-9b ★★ 线稿路的分野：圆里应该是**几笔画**，不是"一整块不透明的画"。
-#   实测这一条才能真正把"换成线稿"和"还是上一张照片"分开：两种都"画了东西"、
-#   都"不越界"，只有**覆盖率**差一个数量级（线稿 <10%，照片 ~85%）。
-_ink_px = sum(1 for q in _foot if math.hypot(q[0] - _C, q[1] - _C) <= _D_IDLE / 2.0)
-_covr = _ink_px / (math.pi * (_D_IDLE / 2.0) ** 2.0)
-check(f"㉴-9b ★★ 素材被判成**线稿**（`avatar_kind()`={_ur.avatar_kind()}）："
-      f"圆里是稀疏的线，不是一整块画  [覆盖率 {_covr * 100:.1f}% < 35%]",
-      (_ur.avatar_kind() == _ur.AVATAR_INK and 0.0 < _covr < 0.35), True)
-
-# ㉴-9c ★★ `classify_avatar` 是**纯函数**，两条路都必须活着（喂合成图，
-#   不靠"仓库里此刻恰好是哪张素材" —— 哪天用户再换回一张照片，
-#   走错路的后果是"整个圆糊成一坨黑"，而这条链上没有任何别的东西会报错）。
-_syn_ink = _Img.new("RGB", (80, 80), (0, 0, 0))
-_Draw.Draw(_syn_ink).ellipse([16, 10, 62, 70], outline=(186, 186, 186), width=3)
-_syn_photo = _Img.new("RGB", (80, 80), (90, 120, 200))
-_Draw.Draw(_syn_photo).rectangle([8, 8, 72, 72], fill=(210, 180, 140))
-check(f"㉴-9c ★★ 线稿判据：黑底细线 → ink，彩色画面 → photo"
-      f"（阈值 近黑≥{_ur.AVATAR_INK_BLACK:.0%} 且 亮≤{_ur.AVATAR_INK_LIT:.0%}）",
-      (_ur.classify_avatar(_syn_ink), _ur.classify_avatar(_syn_photo)),
-      (_ur.AVATAR_INK, _ur.AVATAR_PHOTO))
-
-# ㉴-9d/9e ★★ 两条路造出来的图层**必须不一样** —— 这就是第二十六批改的全部内容：
-#   照片路 = "圆内整块不透明"（球心里贴了张圆照片）；
-#   线稿路 = "只有线不透明、圆内其余透出球面"（球面上画了几笔）。
-_keep_kind, _keep_av = _ur._AV_KIND, _ur._AV
-_ur._AV_DISC.clear()
-_ur._AV_KIND = _ur.AVATAR_INK
-_ink_lay = _ur._avatar_disc(0, 48).copy()
-_ur._AV_DISC.clear()                    # ★ 必须清：两条路共用同一个记忆化字典
-_ur._AV = [_Img.new("RGBA", (96, 96), (200, 80, 40, 255)) for _ in range(3)]
-_ur._AV_KIND = _ur.AVATAR_PHOTO
-_photo_lay = _ur._avatar_disc(0, 48).copy()
-_ur._AV, _ur._AV_KIND = _keep_av, _keep_kind
-_ur._AV_DISC.clear()
-_ur._CACHE.clear()
-#   ★ 门槛用 alpha>60 而不是 >200：1x 空间里线只有半像素宽（渲染真正用的是
-#     SS 空间那张 d=192 的图），峰值本来就不会满 —— 用 >200 量会量出"只有 7 个像素"，
-#     那是**度量选错**，不是线没画出来。
-_ink_lit = [(x, y) for y in range(48) for x in range(48)
-            if _ink_lay.getpixel((x, y))[3] > 60]
-_cov2 = len(_ink_lit) / (math.pi * 24.0 ** 2)
-check(f"㉴-9d ★★ 线稿路：只有线不透明（覆盖率 {_cov2 * 100:.1f}%），"
-      f"线色固定 {_ur.AVATAR_INK_RGB}，圆外一律透明",
-      (len(_ink_lit) > 30 and _cov2 < 0.35
-       and all(_ink_lay.getpixel(q)[:3] == _ur.AVATAR_INK_RGB for q in _ink_lit[:40])
-       and _ink_lay.getpixel((2, 2))[3] == 0 and _ink_lay.getpixel((45, 45))[3] == 0), True)
-check("㉴-9e ★★ 照片路仍在：圆内整块不透明、圆外透明、颜色取自画面本身",
-      (_photo_lay.getpixel((24, 24)), _photo_lay.getpixel((2, 2)),
-       _photo_lay.getpixel((45, 45))),
-      ((200, 80, 40, 255), (200, 80, 40, 0), (200, 80, 40, 0)))
-
-# ㉴-10 兜底：素材不可用时**照旧画字**（球心绝不能是空的）。
-_av_keep = _ur._AV
-_ur._AV = False
-_ur._AV_DISC.clear()
-_ur._CACHE.clear()
-_fb = _shot(kind="idle", glyph="剪", avatar=0)
-_ur._AV = _av_keep
-_ur._AV_DISC.clear()
-_ur._CACHE.clear()
-_fb_a = _fb.getchannel("A")
-check("㉴-10 ★★ 动图取不到时自动**退回画字**（一张素材缺失不许把球心弄空）",
-      (sum(1 for y in range(_fb.size[1]) for x in range(_fb.size[0])
-           if _fb_a.getpixel((x, y)) > 200
-           and sum(_fb.getpixel((x, y))[:3]) / 3.0 > 150) > 30), True)
-
-# ㉴-11 语义层没被动过：`ball_label` 照旧（渲染层只负责"画成小人"）。
-check("㉴-11 ★ 动图只改**外观**，不改状态语义：`ball_label` / `BALL_TEXT` 一个字没动",
-      (gui.ball_label("busy", 87), gui.ball_label("idle", None),
-       tuple(sorted(gui.BALL_TEXT.items()))),
-      ("87", "剪", tuple(sorted({"idle": "剪", "ok": "✓", "err": "×",
-                                 "ask": "!", "busy": "…"}.items()))))
-#   ★ 球心和胶囊图标位必须是**同一张脸**：不然一悬停展开，球上的小人变回剪字。
-check("㉴-12 ★ 球心与胶囊图标位共用同一份帧号（展开/收起不许「同一张脸换脸」）",
-      (_inspect.getsource(_ur._render).count("draw_avatar(") == 2), True)
-
-
-# ── ㉴-13~15：本轮**顺带挖出来**的一个隐形 bug（先于本批就存在）──
-#   `_vgrad` 把**缓存对象本身**交出去，而 `_body` / `_do_card` 直接在它上面
-#   `paste` 白线 —— 同一份渐变被复用几次，那圈白就叠几次（叠到 40 次是纯白 255）。
-#   静态截图看不出来（渲染结果自己有缓存挡着），专挑 pct/hover/动图帧在变的**动态过程**发作。
-#   实测：连渲 40 次球顶从 (121,121,124) 烧到 (254,254,254)。
-_g1 = _ur._vgrad(8, 8, (10, 10, 10), (50, 50, 50))
-_g1.paste((255, 255, 255), (0, 0, 8, 8))            # 模拟调用方的"就地改"
-_g2 = _ur._vgrad(8, 8, (10, 10, 10), (50, 50, 50))
-check("㉴-13 ★★ `_vgrad()` 必须交出**副本**（旧版把缓存对象交出去，调用方一 paste"
-      " 就污染母版 → 那圈亮线越描越白）",
-      (_g2.getpixel((0, 0)) == (10, 10, 10) and _g2.getpixel((0, 7)) == (50, 50, 50)), True)
-
-_b1, _m1 = _ur._body(48, 48, 24, hover=0.0, s=1.0, pad=10)
-_b2, _m2 = _ur._body(48, 48, 24, hover=0.0, s=1.0, pad=10)
-check("㉴-14 ★★ `_body()` 同参数两次必须**逐字节相同**"
-      "（渲染层不许有「越画越亮」这种状态泄漏）",
-      _b1.tobytes() == _b2.tobytes(), True)
-
-_ur._GRAD_CACHE.clear()
-_ur._RAMP_CACHE.clear()
-_ur._CACHE.clear()
-_pk = None
-for _k in range(30):                            # 连压 30 帧（模拟"正在跑"时参数一直在变）
-    _ur._CACHE.clear()
-    _im = _ur.render(48, 48, 24, scale=1.0, kind="busy", glyph="", pct=min(99, _k),
-                     ball_a=1.0, pill_a=0.0)
-    if _pk is None:
-        _pk = _im.getpixel((31, 10))
-_ur._CACHE.clear()
-check(f"㉴-15 ★★ 连压 30 帧后球顶那圈亮线**一点都不漂**（旧版 40 帧烧成纯白）"
-      f"  [首帧 {_pk} → 末帧 {_im.getpixel((31, 10))}]",
-      _im.getpixel((31, 10)) == _pk, True)
-
-
-# ㉴-16 ★★ 按**真实循环节奏**（33ms）跑满一轮：帧号必须 0..N-1 再回 0，
-#   不跳帧、不重复、不空转 —— 这一条才真正回答"看上去是在动吗"。
-#   （帧号算对了但采样节奏不对，屏幕上照样是"两帧来回闪"或者"一顿一顿"。）
-_TICK = 33
-_seq = [_ur.avatar_index_at(_t) for _t in range(0, _ur._AV_TOTAL + _TICK, _TICK)]
-_chg = [_seq[0]] + [b for a, b in zip(_seq, _seq[1:]) if a != b]
-#   ★ 单帧时长 < 采样间隔时，"漏掉某几帧"是**采样**造成的物理必然，不是 bug ——
-#     所以"每帧都到"这条只在帧长 ≥ 33ms 时才要求（当前素材 80ms，满足）。
-_FR_MS = _ms[1] - _ms[0]
-_all = _FR_MS >= _TICK
-check(f"㉴-16 ★★ {_TICK}ms 采样跑满一轮：帧号严格 +1 递增、回到 0，不回头不重复"
-      f"  [覆盖 {len(set(_chg))}/{_nfr} 帧 · 每帧 {_FR_MS}ms]",
-      (_chg[0] == 0 and _chg[-1] == 0
-       and all((b - a) % _nfr == 1 for a, b in zip(_chg, _chg[1:]))
-       and (not _all or len(set(_chg)) == _nfr)), True)
-#   ★ 一轮重画次数 = 帧数 + 1（帧号变了才画），图 12.5fps 就不该按 30fps 重画。
-check(f"㉴-17 ★ 一轮里只重画 {len(_chg)} 次（≈ 帧数+1），而不是每 {_TICK}ms 一次"
-      f"共 {len(_seq)} 次",
-      ((len(_chg) == _nfr + 1 if _all else len(_chg) <= _nfr + 1)
-       and len(_chg) < len(_seq) / 2), True)
-
-
-# ㉴-18 ★ 展开态（横条）的**图标位**也换成同一张小人 —— 逐像素证一遍。
-#   为什么必须证：这条链上"球心"和"图标位"是**两处调用**，
-#   只改一处的后果是"悬停展开时球上的小人变回剪字"（一次形变里换脸）。
-_pl_none = _ur.render(238, _BD, 16, scale=1.0, kind="idle", glyph="剪",
-                      title="一键导出", sub="预合成 · 存草稿", ball_a=0.0,
-                      pill_a=1.0, avatar=None)
-_pl_av = _ur.render(238, _BD, 16, scale=1.0, kind="idle", glyph="剪",
-                    title="一键导出", sub="预合成 · 存草稿", ball_a=0.0,
-                    pill_a=1.0, avatar=0)
-_pn, _pa = _pl_none.load(), _pl_av.load()
-_i0 = _ur.pad_for(1.0) + _ur.default_layout(1.0)["pad"]
-_icx = _i0 + _ICON / 2.0
-_icy = _ur.pad_for(1.0) + _BD / 2.0
-_inside = _outside = 0
-for _y in range(_pl_av.size[1]):
-    for _x in range(_pl_av.size[0]):
-        _dd = max(abs(_pn[_x, _y][_i] - _pa[_x, _y][_i]) for _i in range(4))
-        if _dd <= 2:
-            continue
-        if math.hypot(_x - _icx, _y - _icy) <= _ICON / 2.0 + 2:
-            _inside += 1
-        else:
-            _outside += 1
-check(f"㉴-18 ★ 展开态图标位也换成小人（差异必须**全部**落在那个 {_ICON}px 圆盘里）"
-      f"  [盘内 {_inside} 个 / 盘外 {_outside} 个]",
-      (_inside > 40 and _outside == 0), True)
-
-# ㉴-19 ★★ 「球再稍微大点」落地（这一批的第二个要求）。
-#   ★ 为什么不直接断言"==56"：56 是**决定**不是**约束**。真正要守住的是三件事——
-#     球确实变大了、**环跟着球一起走**（不然球一变环就贴到边上）、
-#     球心里那个画面仍然填得满（球变大而画面不跟 = 白变大）。
-check(f"㉴-19 ★★ 球径 {_BD}px（第二十五批是 48）· 环心比例 {_RING_R / _HALF:.2f}（0.71 是原设计）"
-      f"· 待机画面占球 {_D_IDLE / _BD:.0%}",
-      (_BD >= 52 and 0.68 <= _RING_R / _HALF <= 0.74 and _D_IDLE / _BD >= 0.80), True)
-check("㉴-20 ★ 布局的两个数（环离球边 / 图标位直径）在渲染层和主程序里**逐项一致**"
-      "（两边各写一份，改了主程序那份不生效 —— 这个坑本项目踩过两次）",
-      (_ur.default_layout(1.0)["ring_inset"], _ur.default_layout(1.0)["icon_d"],
-       _ur.default_sizes(1.0)["ball"], _ur.default_sizes(1.0)["pct"]),
-      (gui.ui_metrics(1.0)["ring_inset"], gui.ui_metrics(1.0)["icon_d"],
-       gui.ui_metrics(1.0)["ball_px"], gui.ui_metrics(1.0)["pct_px"]))
-
-# ㉴-21 ★★ 头像的门控必须是"球**或**横条任一可见"。
-#   行为那一条在 `test_gui_smoke` 的 ⑫（真悬停到完全展开再读 `avatar`）；
-#   这里再钉一次源码，是因为这个 bug 的形态很隐蔽：**渲染层全对、只有门控错了**，
-#   而"展开后变回数字"这件事在静态截图/单看球态时完全看不出来。
-_vs = code_of(gui.Companion._view_state)
-_av_gate = _vs.split('"avatar"')[-1][:160] if '"avatar"' in _vs else ""
-check("㉴-21 ★★ `_view_state` 的 avatar 门控含 `pill_a`（只看 ball_a 会让"
-      "「展开后图标位变回数字」—— 第二十六批实测踩到）",
-      ("ball_a > 0.004" in _av_gate and "pill_a > 0.004" in _av_gate), True)
-
+check("㉔-1 仓库里不再包含 ball_avatar.gif", (HERE / "ball_avatar.gif").exists(), False)
+check("㉔-2 渲染 API 不再接受 avatar 帧号",
+      "avatar" in _inspect.signature(_ur.render).parameters, False)
+check("㉔-3 打包配置不再引用动图资源",
+      "ball_avatar.gif" in (HERE / "JianyingAssistant.spec").read_text(encoding="utf-8"), False)
+check("㉔-4 球心静态语义保持不变（busy=百分比 / idle=剪）",
+      (gui.ball_label("busy", 87), gui.ball_label("idle", None)), ("87", "剪"))
 
 print()
 print("失败项:", fails if fails else "无")

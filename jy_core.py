@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-"""剪映伴侣核心逻辑（无 GUI），供界面与命令行共同使用。"""
+"""剪映助手核心逻辑（无 GUI），供界面与命令行共同使用。"""
 
 import ctypes
 import ctypes.wintypes as wt
@@ -187,7 +187,7 @@ def default_config():
         #   实测能用但**成功率不稳**（同页多张封面判别度只有 +0.047），用户权衡后决定
         #   **宁可自己点一下**，换 100% 确定性 —— 点错草稿的代价是必报「媒体格式不支持」，
         #   比多动一下鼠标贵得多。
-        #   ★ 默认关 = 伴侣只**点名**"请打开草稿「X」（必须这个）"然后等你双击卡片，
+        #   ★ 默认关 = 助手只**点名**"请打开草稿「X」（必须这个）"然后等你双击卡片，
         #     一下鼠标都不动。代码全部保留：菜单打开这个开关即回到自动模式
         #     （"回退"=行为回退，不是删代码）。
         "auto_open_draft": False,
@@ -236,13 +236,13 @@ def default_config():
         "top_gap": 92,
         # ★★ 第十八批（2026-09-20 导出守望）：流程跑到「等你导出」之后，用户要自己在
         #   剪映里导出，**导完还得记得回来点还原** —— 这是最后一段纯靠记忆的人工步骤。
-        #   export_watch 开着 = 伴侣在后台**只观察**剪映的导出对话框（出现 → 消失），
+        #   export_watch 开着 = 助手在后台**只观察**剪映的导出对话框（出现 → 消失），
         #   消失即"导出流程走完了（或被取消）"，主动把球弹出来提醒"可以一键还原了"。
         #   ★ 只观察、不动手：绝不因为"对话框消失了"就自动去杀剪映/写草稿 ——
         #     对话框消失也可能是用户取消了导出，自动还原等于猜。
         #   ★ 失败开放：枚举窗口出任何异常都当"没看见"，宁可漏提醒一次。
         "export_watch": True,
-        # ★★ 第二十批（v1.3.0 实验 · 全自动导出）：默认**关**。开了 = 授权伴侣在
+        # ★★ 第二十批（v1.3.0 实验 · 全自动导出）：默认**关**。开了 = 授权助手在
         #   「等你导出」之后自动拖入 → 发导出键（Ctrl+E）→ 回车确认 → 守望完成 →
         #   自动还原。导出对话框不是我们画的，所以每一步都有"交回手动"的退路。
         "full_auto_export": False,
@@ -254,16 +254,19 @@ def config_path():
         base = Path(sys.executable).parent
     else:
         base = Path(__file__).resolve().parent
-    return base / "伴侣配置.json"
+    return base / "助手配置.json"
 
 
 def load_config():
     cfg = default_config()
-    try:
-        if config_path().exists():
-            cfg.update(json.loads(config_path().read_text(encoding="utf-8")))
-    except Exception:
-        pass
+    # 升级改名时沿用旧配置，避免用户的剪映路径 / 草稿位置 / 快捷键备份指针丢失。
+    for path in (config_path(), config_path().with_name("伴侣配置.json")):
+        try:
+            if path.exists():
+                cfg.update(json.loads(path.read_text(encoding="utf-8")))
+                break
+        except Exception:
+            continue
     return cfg
 
 
@@ -1016,7 +1019,7 @@ def open_folder_and_select(path, tidy=True, folder_name=None, near=None):
 def _close_duplicate_folder_windows(key, keep, limit=4):
     """关掉"同一个文件夹多开"的多余窗口（用户抱怨"弹了两次"的残留）。
 
-    ★ 只关**伴侣自己规整过的那种窗口**：标题含 `key` **且**尺寸正好是我们设的
+    ★ 只关**助手自己规整过的那种窗口**：标题含 `key` **且**尺寸正好是我们设的
       1000x620（±30px）。用户自己拉的窗口、最大化窗口一律不动 —— 宁可少关，
       也不能关掉用户正在用的东西。
     ★ 尺寸比较必须在 `_dpi_aware()` 里做（`GetWindowRect` 随线程 DPI 感知级别变，
@@ -1288,7 +1291,7 @@ def batch_prepare_draft(cfg, draft_dir, st=None, cancel=None):
 # ================================================================ 全自动导出（第二十批 v1.3.0 · 实验）
 # ★ 流程的最后一段人工（拖入 + 按导出 + 守完成）到这里也自动化。**实验性、默认关**：
 #   导出对话框不是我们画的，里面每一版都可能变 —— 所以每一步都自带"不成就交回手动"
-#   的退路，绝不硬闯。开了这个开关 = 用户明确授权伴侣替他按导出键。
+#   的退路，绝不硬闯。开了这个开关 = 用户明确授权助手替他按导出键。
 FULLAUTO_EXPORT_KEY_DEFAULT = "ctrl+e"
 
 
@@ -1381,7 +1384,7 @@ def full_auto_export(cfg, st=None, cancel=None):
 
 
 # ================================================================ 极简 UIA（零依赖）
-# ★ 为什么自己写：伴侣要打成**单文件 exe**（PyInstaller onefile），多引一个 COM 封装库
+# ★ 为什么自己写：助手要打成**单文件 exe**（PyInstaller onefile），多引一个 COM 封装库
 #   （pywinauto / uiautomation）就要多几 MB，而且在冻结环境里很不稳（comtypes 的
 #   generated 模块要落盘缓存）。UIA 本身就是 COM —— ctypes 直接走 vtable 就够用，
 #   实测能读出资源管理器里的文件名和精确坐标。
@@ -1993,7 +1996,7 @@ _TASKBAR_CLICK_ALLOWED = True
 # ★ 清剪映「挡路模态框」（见 dismiss_jy_modals / MODAL_TITLES）的总开关。
 #   默认开：不关它，「链接媒体」一挂上就抢走键盘焦点，后面所有按键都送不进去。
 #   它只做"等价于点取消"这件事，不碰任何文件；用户想完全禁用就
-#   cfg["dismiss_modals"] = false（在 伴侣配置.json 里改）。
+#   cfg["dismiss_modals"] = false（在 助手配置.json 里改）。
 _DISMISS_MODALS = True
 
 
@@ -2024,7 +2027,7 @@ def _taskbar_activate(title_kw="剪映专业版"):
                     nm = b.window_text()
                 except Exception:
                     continue
-                if title_kw in nm or (title_kw.rstrip("专业版") in nm and "伴侣" not in nm):
+                if title_kw in nm or (title_kw.rstrip("专业版") in nm and "助手" not in nm):
                     target = b
                     break
             if not target:
@@ -2166,7 +2169,7 @@ def find_card_center(img):
 
 
 # ------------------------------------------------ ★ 用草稿封面精确定位首页卡片
-# 2026-09-18 用户要求"伴侣自己打开原草稿，不动鼠标"。
+# 2026-09-18 用户要求"助手自己打开原草稿，不动鼠标"。
 # 实测结论：剪映**没有**任何非鼠标入口（快捷键表 91 条命令里没有"打开草稿"；
 # UIA 控件树是空的、剪映没开无障碍桥；主程序没有 CLI 参数；跳转列表没有草稿项；
 # 优雅退出后重启也**不会**自动回到上次草稿 —— 一定停在首页）。
@@ -2965,7 +2968,7 @@ def resolve_root(cfg, status_cb=None):
     ★★ 2026-09-19 第十五批（用户"继续优化"）：加了一条"别被空目录钉死"的规则。
       旧逻辑是"第一个**存在**的候选就写进配置并永久返回"。问题在于
       **存在 ≠ 是对的**：一个残留空目录（比如以前建的 `C:\\剪映草稿`）只要恰好排在
-      真目录前面，就会被**永久钉进 伴侣配置.json**，之后每次启动都直接返回它 ——
+      真目录前面，就会被**永久钉进 助手配置.json**，之后每次启动都直接返回它 ——
       用户的表现是"体检全通过，但一键导出说找不到草稿"，而且**没有任何办法纠正**。
       现在：缓存的根里**没有**预合成内容、而别的候选**有**时，改用它（记日志）。
       ★ 有界：只在"缓存根里没内容"时才去看别的候选，且最多看 3 个、总预算 3 秒；
@@ -3055,7 +3058,7 @@ def draft_root_has_combos(root, budget=1.5, max_dirs=400):
 
     ★ 2026-09-19 第十五批（用户"继续优化"）：为什么需要它 ——
       「目录存在」和「目录是对的」**不是一回事**。
-      旧的环境体检只判 `Path(dr).is_dir()`，于是把 伴侣配置.json 里一个
+      旧的环境体检只判 `Path(dr).is_dir()`，于是把 助手配置.json 里一个
       **早就失效/指错的**目录当成 OK 报给用户（假绿）；而 resolve_root 又会
       把这个目录永久钉在配置里。用户看到的是"体检全通过，但一键导出说找不到草稿"。
       这里用一个**有界**的检查来回答"里面到底有没有东西"：
@@ -3181,19 +3184,19 @@ def draft_root_status(cfg):
                 f"{dr}\n\n"
                 "这个路径**可能不是**剪映真正在用的草稿目录 ——\n"
                 "剪映的草稿根一般叫 com.lveditor.draft，里面是「草稿名/Resources/combination」。\n"
-                "如果点「一键导出」报找不到草稿，请右键伴侣 →「设置草稿目录…」重新指一下。")
+                "如果点「一键导出」报找不到草稿，请右键助手 →「设置草稿目录…」重新指一下。")
     if dr:
         return ("warn", "草稿目录：上次记的路径已经不在了",
                 f"{dr}\n\n"
-                "伴侣会重新自动找一遍（**也会去读剪映设置里记的草稿位置**）；\n"
+                "助手会重新自动找一遍（**也会去读剪映设置里记的草稿位置**）；\n"
                 "两边都找不到，才需要右键 →「设置草稿目录…」手动指一下。")
     r = _pick_standard_root()
     if r:
         return ("ok", "草稿目录：找到", str(r))
     return ("bad", "草稿目录：找不到",
             "剪映默认放在 %LOCALAPPDATA%/JianyingPro/User Data/Projects/com.lveditor.draft。\n"
-            "伴侣也会去读剪映设置（设置 → 草稿位置）里记的那个位置；\n"
-            "两边都没有，才需要右键伴侣 →「设置草稿目录…」手动指一下。")
+            "助手也会去读剪映设置（设置 → 草稿位置）里记的那个位置；\n"
+            "两边都没有，才需要右键助手 →「设置草稿目录…」手动指一下。")
 
 
 # 自动配置**允许写进配置文件**的键（其余键一律不落盘，见 _save_autosetup_keys）。
@@ -3207,7 +3210,7 @@ def _save_autosetup_keys(cfg):
       `autodetect_env()` 手里的 cfg 是 `load_config()` 的产物 = **内置默认值打底
       + 文件覆盖**。整份写回去 = 把"今天的内置默认值"钉死在用户机器上 ——
       以后改了默认值，老用户**永远收不到**（第九批定的规矩，`[Files]` 段还专门
-      写了"故意不写 伴侣配置.json"）。所以这里只挑这几个**机器事实**键合并，
+      写了"故意不写 助手配置.json"）。所以这里只挑这几个**机器事实**键合并，
       别的一律不动。测试 `test_guard [26]` 直接断言"落盘键 ⊆ 这四个"。
     """
     path = config_path()
@@ -3231,7 +3234,7 @@ def _save_autosetup_keys(cfg):
 
 
 def autodetect_env(cfg=None, save=True):
-    """★ 把"这台机器的环境"问清楚并**写进 伴侣配置.json**（安装时 / 第一次启动时调一次）。
+    """★ 把"这台机器的环境"问清楚并**写进 助手配置.json**（安装时 / 第一次启动时调一次）。
 
     ★★ 2026-09-19 第十六批。用户原话：
       「我觉得最好是安装时自动帮用户搞的很好，不让用户多余操作」。
@@ -3245,7 +3248,7 @@ def autodetect_env(cfg=None, save=True):
       · 草稿在哪 → **问剪映自己的设置**（`currentCustomDraftPath`，最权威）
         → 常见落点里挑一个"真有预合成产物"的（`_pick_standard_root`）。
 
-    ★ 和第九批那条老规矩（"安装时**不要**写 伴侣配置.json"）怎么共存：
+    ★ 和第九批那条老规矩（"安装时**不要**写 助手配置.json"）怎么共存：
       老规矩禁止的是把**内置默认值**抄成文件（那样以后改默认值永远到不了老用户）。
       这里只写**这台机器上测出来的事实**：剪映路径、草稿位置 —— 代码永远猜不到，
       不写才会逼用户去点菜单。默认值仍然只在代码里，文件里就这几项 + 两个记账位。
@@ -3279,7 +3282,7 @@ def autodetect_env(cfg=None, save=True):
         if manual:
             rep["jianying_how"] = "沿用你手动指定的"
         else:
-            rep["jianying_how"] = "伴侣自动找到的"
+            rep["jianying_how"] = "助手自动找到的"
             cfg["jianying_exe"] = str(exe)
             rep["changed"].append("剪映路径")
 
@@ -3350,15 +3353,15 @@ def format_autosetup(rep):
         out.append(f"      {rep['jianying_exe']}")
     else:
         out.append("剪映：这台电脑上没找到。")
-        out.append("      伴侣本身不含剪映，请先安装「剪映专业版」并打开过一次；")
-        out.append("      装好之后伴侣下次启动会自己认，不用你指路。")
+        out.append("      助手本身不含剪映，请先安装「剪映专业版」并打开过一次；")
+        out.append("      装好之后助手下次启动会自己认，不用你指路。")
     if rep.get("draft_root"):
         out.append(f"草稿目录：已认好（{rep.get('draft_how') or '自动'}）")
         out.append(f"      {rep['draft_root']}")
     else:
         out.append("草稿目录：暂时没找到。")
-        out.append("      第一次点「一键导出」时伴侣会再找一遍；")
-        out.append("      实在找不到：右键伴侣 →「设置草稿目录…」手动指一次。")
+        out.append("      第一次点「一键导出」时助手会再找一遍；")
+        out.append("      实在找不到：右键助手 →「设置草稿目录…」手动指一次。")
     ch = rep.get("changed") or []
     if ch:
         out.append("已经自动写进配置：" + "、".join(ch) + "（你不需要做任何设置）")
@@ -3366,7 +3369,7 @@ def format_autosetup(rep):
         out.append("配置本来就是对的，没有需要改的。")
     else:
         out.append("这台机器上还没认出剪映/草稿位置 —— 装好剪映、打开过一次之后，")
-        out.append("伴侣下次启动会自动再认一遍。")
+        out.append("助手下次启动会自动再认一遍。")
     return "\n".join(out)
 
 
@@ -3894,7 +3897,7 @@ def read_shortcut_all(action):
 
     ★★ 为什么必须有这个（2026-09-18 晚事故根因）：
        `read_shortcut()` 只返回列表**第一项**，所以 `read_shortcut("del","delete")`
-       拿到的其实是 **"Backspace"**，不是 Del 键 —— 伴侣一直在往时间线发 Backspace。
+       拿到的其实是 **"Backspace"**，不是 Del 键 —— 助手一直在往时间线发 Backspace。
        Backspace 在剪映别的地方语义是"返回上一级"，焦点一旦不在时间线上就跑偏；
        清空时间线这种"真删"动作必须用语义单一的 Del。这里把整张表拿到手自己挑。
     """
@@ -4361,7 +4364,7 @@ def _clear_timeline(cfg, hwnd, st, cancel=None):
          没变化 = 没清掉 → 最多再试一次 → 还是没变化就 return False，**不往下走**。
     ★ 删两次 Del 的"防吞"写法已去掉：与其往未知状态连发按键，不如"发一次 → 看结果
       → 没变再干净地重来一次"。往状态不明的时间线连发删除键，正是这次卡死的风险源。
-    ★ 这是**剪映自己的删除**（等价用户手动选中按 Del），伴侣只是替他按键：
+    ★ 这是**剪映自己的删除**（等价用户手动选中按 Del），助手只是替他按键：
       删的是**当前编辑中的时间线**，不改写任何文件——草稿落盘由剪映自己完成。
     ★ 可逆性：真删了原内容，所以"还原"不再是把开关拨回来，而是**把预合成前
       备份的草稿 json 写回**（见 `restore_draft`），由备份兜底。
@@ -4469,7 +4472,7 @@ def restore_draft(cfg, status_cb=None, finished_cb=None):
 
     ★ 为什么现在要动文件（2026-09-18 用户批准的**解禁**）：
       流程改成"先清空原时间线内容 → 把预合成产物拖进去导出"之后，原内容是
-      **真删**过的，没有"开关"可以拨回来。但伴侣在预合成**之前**已经把草稿的
+      **真删**过的，没有"开关"可以拨回来。但助手在预合成**之前**已经把草稿的
       元数据 json 备份到了桌面（`backup_draft_json`），所以
       **还原 = 把那份备份写回草稿目录** → 剪映重开后就是预合成之前的样子
       （原时间线还在，预合成片段不存在）。
@@ -4501,7 +4504,7 @@ def restore_draft(cfg, status_cb=None, finished_cb=None):
                "「还原草稿」靠的是跑「一键导出」时**自动做的那份草稿备份**"
                "（存在桌面「剪映预合成导出\\_备份」里）。\n"
                "如果这次还没跑过一键导出（或换过电脑、清过桌面），就没有这份备份——\n"
-               "伴侣不会凭空去改你的草稿。\n\n"
+               "助手不会凭空去改你的草稿。\n\n"
                "手动恢复也行：在剪映里连按几次 **Ctrl+Z** 撤销，\n"
                "或从剪映自己的草稿备份里恢复。\n\n"
                "★ 想看备份到底在哪：右键本按钮 →「打开草稿备份文件夹」。")
@@ -4513,7 +4516,7 @@ def restore_draft(cfg, status_cb=None, finished_cb=None):
         finish(False,
                f"备份还在：\n   {bk}\n\n"
                "但**原草稿目录**已经找不到了（被改名/移动/删除了？）。\n"
-               "伴侣不会往别处乱写。你可以手动把备份里的 .json 拷回草稿目录，\n"
+               "助手不会往别处乱写。你可以手动把备份里的 .json 拷回草稿目录，\n"
                "或把这整个备份文件夹发给开发者。\n"
                "★ 右键本按钮 →「打开草稿备份文件夹」就能看到它。")
         return
@@ -4558,7 +4561,7 @@ def restore_draft(cfg, status_cb=None, finished_cb=None):
         return
 
     # ★ 写回成功 → 打上"这份备份已经用过了"的标记（2026-09-18 第十批）。
-    #   备份原件**不删**（红线：伴侣不删文件），只改配置里的状态位；
+    #   备份原件**不删**（红线：助手不删文件），只改配置里的状态位；
     #   以后再点「还原草稿」界面会先警告一次（见 backup_consumed 的注释）。
     try:
         cfg["_backup_consumed"] = True
@@ -4570,11 +4573,11 @@ def restore_draft(cfg, status_cb=None, finished_cb=None):
     st("重开剪映并回到草稿…")
     hwnd = _restart_and_enter(cfg, st, enter=True, draft_hint=name, draft_dir=dr)
     reenter_note = "" if hwnd else (
-        f"\n\n★ 剪映已经重开，但**没能自动回到草稿编辑页**（这一步伴侣不会替你点草稿卡片，\n"
+        f"\n\n★ 剪映已经重开，但**没能自动回到草稿编辑页**（这一步助手不会替你点草稿卡片，\n"
         f"   避免点错草稿）。请自己双击打开草稿「{name}」看一眼。\n")
 
     # ★ 如实报告"多出来的东西"：预合成时新建的 subdraft 目录会留在草稿里。
-    #   写回只覆盖、不删除（红线：伴侣不删文件），所以这里只报告、把决定权交回用户。
+    #   写回只覆盖、不删除（红线：助手不删文件），所以这里只报告、把决定权交回用户。
     orphans = _orphan_subdrafts(bk, dr)
     orphan_note = ""
     if orphans:
@@ -4582,7 +4585,7 @@ def restore_draft(cfg, status_cb=None, finished_cb=None):
         shown = "、".join(orphans[:3]) + ("…" if len(orphans) > 3 else "")
         orphan_note = (f"\n\n★ 有一件事要如实告诉你：这次预合成时剪映新建过嵌套时间线目录\n"
                        f"   `subdraft\\{shown}`，它**不在**备份里，所以还原后仍留在草稿中。\n"
-                       f"   伴侣**从不删你的文件**，所以没动它。正常情况下剪映会忽略它；\n"
+                       f"   助手**从不删你的文件**，所以没动它。正常情况下剪映会忽略它；\n"
                        f"   如果打开草稿发现异常，可以手动把这个目录删掉（可先整份拷出来留底）。\n")
 
     draft_txt = f"「{name}」"
@@ -4607,7 +4610,7 @@ def restore_draft(cfg, status_cb=None, finished_cb=None):
 
 # ================================================================ 进度（给 GUI 画进度条）
 # ★ 流水线的阶段表：(给别人看的显示名, 起始%, 结束%)。
-#   为什么要有这个：伴侣对作者本人是"点一下就好"，但对**别人**是个黑盒 ——
+#   为什么要有这个：助手对作者本人是"点一下就好"，但对**别人**是个黑盒 ——
 #   中间有 20 秒到 2 分钟的等待（剪映在渲染），没有进度就分不清"在干活"还是"卡死了"。
 #   ★ 顺序 / 数量必须和 `run_pipeline` 里的 `stage(N)` 一一对应（test_guard 有断言）。
 PIPELINE_STAGES = (
@@ -4704,7 +4707,7 @@ def run_pipeline(cfg, status_cb=None, finished_cb=None, rescue=False, cancel=Non
       ⑥ ★ **清空成功之后**才打开 `Resources\\combination` 并选中产物，把预合成文件
         **交给用户手动拖进时间线**（默认**不自动拖**，2026-09-18 用户定案：
         勾菜单「自动拖进时间线」才走 `drag_file_into_jianying` 的真鼠标拖拽 + 自检；
-        注意 **Ctrl+V 剪映不认**，只能拖）。伴侣在这里**停下**，之后什么都不做。
+        注意 **Ctrl+V 剪映不认**，只能拖）。助手在这里**停下**，之后什么都不做。
       ⑦ 等用户导出完、**自己点按钮（左键，带确认）/ 右键「还原草稿」**才动作：
         把 ⓪ 备份的草稿 json **写回**草稿目录，剪映重开后就是**预合成之前**的样子
         （见 `restore_draft`）。
@@ -4809,7 +4812,7 @@ def run_pipeline(cfg, status_cb=None, finished_cb=None, rescue=False, cancel=Non
             if finished_cb:
                 finished_cb(False, "你当前不在草稿编辑页。\n"
                                    "请先在剪映里打开要处理的草稿、选中片段，然后重试。\n"
-                                   "（伴侣不会去点你的草稿列表，避免点错草稿。）")
+                                   "（助手不会去点你的草稿列表，避免点错草稿。）")
             return
 
         # 自动绑定预合成快捷键（写入剪映配置；需重启剪映生效）
@@ -4832,7 +4835,7 @@ def run_pipeline(cfg, status_cb=None, finished_cb=None, rescue=False, cancel=Non
                             "  绑一个键（比如 Alt+H）→ 保存 → 完全退出剪映再打开，\n"
                             "  然后回来重新点「一键导出」。\n\n"
                             "★ 如果你确认剪映里**已经**绑好了这个快捷键，那多半是\n"
-                            "  剪映版本差异导致伴侣没读出来，请把这句话告诉作者。")
+                            "  剪映版本差异导致助手没读出来，请把这句话告诉作者。")
             return
 
         if hk_changed:
@@ -4875,11 +4878,11 @@ def run_pipeline(cfg, status_cb=None, finished_cb=None, rescue=False, cancel=Non
         ck()
         if not root:
             if finished_cb:
-                # ★ 第十五批：别再让用户去手改 伴侣配置.json —— 菜单里有入口了。
+                # ★ 第十五批：别再让用户去手改 助手配置.json —— 菜单里有入口了。
                 finished_cb(False,
                             "找不到剪映的草稿目录。\n\n"
                             "剪映里改过草稿位置的话（设置 → 草稿位置），\n"
-                            "请右键伴侣 →「设置草稿目录…」手动指一下。")
+                            "请右键助手 →「设置草稿目录…」手动指一下。")
             return
 
         before = {}
@@ -5013,7 +5016,7 @@ def run_pipeline(cfg, status_cb=None, finished_cb=None, rescue=False, cancel=Non
                             f"**已经停下了，没有动你的时间线。**\n\n"
                             f"检测到你打开的是草稿「{opened}」，\n"
                             f"但这次预合成的登记写在草稿「{draft.name}」里。\n\n"
-                            f"清空会**真删**内容，所以伴侣不敢在认错的草稿上动手。\n"
+                            f"清空会**真删**内容，所以助手不敢在认错的草稿上动手。\n"
                             f"请先**切回草稿「{draft.name}」**，然后再点一次「一键导出」。")
             return
         reg_note = ("" if reg_ok else
@@ -5118,12 +5121,12 @@ def run_pipeline(cfg, status_cb=None, finished_cb=None, rescue=False, cancel=Non
                             f"已打开并选中草稿里的预合成文件（{mb:.0f} MB）：\n"
                             f"   {src}\n\n"
                             + head
-                            + "★ **接下来全是你的事 —— 伴侣什么都不做，会一直等你**：\n"
+                            + "★ **接下来全是你的事 —— 助手什么都不做，会一直等你**：\n"
                             + todo
                             + "\n★ **等你导出完成**，回来「还原草稿」把项目还原回去：\n"
                             "   **左键点本按钮** → 它会问你一句「导出完成了吗」\n"
                             "       （还在导出就点「否」，我等你；不会打断你的导出）\n"
-                            "   确认后伴侣会：关掉剪映 → 把预合成**之前**备份的草稿写回去\n"
+                            "   确认后助手会：关掉剪映 → 把预合成**之前**备份的草稿写回去\n"
                             "       → 重开剪映回到这份草稿。\n"
                             "   （右键菜单里也有「还原草稿（回到预合成前）」，\n"
                             "     还能看到备份的是哪份草稿、有没有备份）\n"
@@ -5133,7 +5136,7 @@ def run_pipeline(cfg, status_cb=None, finished_cb=None, rescue=False, cancel=Non
             if finished_cb:
                 finished_cb(False,
                             "**没能确认原时间线被清空，所以我停在这里了。**\n\n"
-                            "★ 你的时间线**没有被伴侣改动**"
+                            "★ 你的时间线**没有被助手改动**"
                             "（清空这一步没通过自检，就没往下走、也没打开文件夹）。\n\n"
                             "可能的原因：剪映还在加载/忙碌、有弹窗挡着键盘，\n"
                             "或者焦点不在时间线上，按键没被时间线吃到。\n\n"
@@ -5205,7 +5208,7 @@ def run_pipeline(cfg, status_cb=None, finished_cb=None, rescue=False, cancel=Non
             if finished_cb:
                 finished_cb(True,
                             f"已经中止，并且**把草稿{_dtxt}还原回预合成之前**了。\n\n"
-                            "★ 中止时伴侣会自动还原，不会给你留一个半残的草稿。\n"
+                            "★ 中止时助手会自动还原，不会给你留一个半残的草稿。\n"
                             f"  写回的草稿目录：{_dr}\n"
                             "  （只动草稿元数据 .json；预合成产物一个字节没碰。）\n"
                             + (f"★ 备份原件保留在：{_bk}\n" if _bk else "")
@@ -5236,7 +5239,7 @@ def run_pipeline(cfg, status_cb=None, finished_cb=None, rescue=False, cancel=Non
 
 def extract_latest(cfg, status_cb=None, finished_cb=None):
     """兜底模式：不发任何按键。用户在剪映里**手动**做完
-    「复合片段 → 右键预合成」之后点这个——伴侣只做物理动作：
+    「复合片段 → 右键预合成」之后点这个——助手只做物理动作：
     找到最新的预合成文件 → 打开并选中它 + 写进剪贴板，剩下的按教程手动来。"""
 
     def st(t, k="busy"):
@@ -5253,7 +5256,7 @@ def extract_latest(cfg, status_cb=None, finished_cb=None):
                 # ★ 第十五批：同上，指向菜单入口。
                 finished_cb(False,
                             "找不到剪映的草稿目录。\n\n"
-                            "如果剪映里改过草稿位置，请右键伴侣 →「设置草稿目录…」手动指一下。")
+                            "如果剪映里改过草稿位置，请右键助手 →「设置草稿目录…」手动指一下。")
             return
         items = combo_dirs(root)
         if not items:
@@ -5315,7 +5318,7 @@ def strip_md_emphasis(s):
     return s.replace("**", "")
 
 
-def notify_box(msg, title="剪映伴侣"):
+def notify_box(msg, title="剪映助手"):
     msg = strip_md_emphasis(msg)
     try:
         mb = getattr(shell32, "MessageBoxTimeoutW", None)
@@ -5350,9 +5353,9 @@ def env_selfcheck(cfg, quick=False):
         out.append(("ok", "剪映：已安装", str(exe)))
     else:
         out.append(("bad", "剪映：没找到",
-                    "伴侣本身不含剪映，它只是替你按键。\n"
+                    "助手本身不含剪映，它只是替你按键。\n"
                     "请先安装「剪映专业版」，并至少打开过一次。\n"
-                    "装在自定义位置的话：右键伴侣 →「设置剪映路径…」手动指一下。"))
+                    "装在自定义位置的话：右键助手 →「设置剪映路径…」手动指一下。"))
 
     # ①b ★ 第十六批：「自动配置」——要让用户明确知道**他不需要做任何设置**。
     #   这一条是"安装时自动帮用户搞好"的**可见证据**：装完/首跑时就写好了，
@@ -5363,7 +5366,7 @@ def env_selfcheck(cfg, quick=False):
         if _jx and _dr:
             out.append(("ok", "自动配置：已经替你配好了",
                         f"剪映：{_jx}\n草稿目录：{_dr}\n\n"
-                        "这两个位置是**装的时候**（或第一次启动时）伴侣自己认出来的，\n"
+                        "这两个位置是**装的时候**（或第一次启动时）助手自己认出来的，\n"
                         "你不需要做任何设置。\n"
                         "以后换了位置：右键 →「设置剪映路径…」/「设置草稿目录…」。"))
         else:
@@ -5374,7 +5377,7 @@ def env_selfcheck(cfg, quick=False):
                         "右键 →「设置剪映路径…」/「设置草稿目录…」手动指一次就好。"))
     else:
         out.append(("warn", "自动配置：还没跑过",
-                    "第一次启动 / 点「一键导出」时伴侣会自动认一遍，认到就写进配置，\n"
+                    "第一次启动 / 点「一键导出」时助手会自动认一遍，认到就写进配置，\n"
                     "你不需要手动填任何路径。"))
 
     # ② 剪映这会儿在不在跑
@@ -5390,20 +5393,20 @@ def env_selfcheck(cfg, quick=False):
         out.append(("warn", "剪映：没在运行",
                     "点「一键导出」之前，请先把剪映打开到**草稿编辑页**。"))
 
-    # ③ 预合成快捷键（伴侣会自动绑，但要让用户知道"我会动你的设置"）
+    # ③ 预合成快捷键（助手会自动绑，但要让用户知道"我会动你的设置"）
     sd = _shortcut_dir()
     hk = read_shortcut("precompileCombination", "") if sd else ""
     if hk:
         out.append(("ok", f"预合成快捷键：{hk}", "已经绑好了，不需要你手动设置。"))
     elif sd:
         out.append(("warn", "预合成快捷键：还没绑",
-                    "第一次点「一键导出」时伴侣会自动绑一个（默认 Alt+H）。\n"
+                    "第一次点「一键导出」时助手会自动绑一个（默认 Alt+H）。\n"
                     "★ 绑之前会**先备份**你原来的快捷键设置，\n"
                     "   想还原：右键菜单「还原剪映快捷键设置」。"))
     else:
         out.append(("warn", "剪映快捷键配置：还没生成",
                     "第一次打开剪映之后它才会建这份配置。\n"
-                    "伴侣会在第一次点「一键导出」时自动绑好预合成快捷键。"))
+                    "助手会在第一次点「一键导出」时自动绑好预合成快捷键。"))
 
     # ④ 草稿目录
     #   ★★ 2026-09-19 第十五批：这里原来是 `if cfg["draft_root"] and is_dir(): ok` ——
@@ -5420,7 +5423,7 @@ def env_selfcheck(cfg, quick=False):
             #   `\UXXXXXXXX` 转义 → SyntaxError（2026-09-18 晚踩过）。用正斜杠展示。
             out.append(("warn", "草稿目录：等第一次跑的时候再找",
                         "默认在 %LOCALAPPDATA%/JianyingPro/User Data/Projects/com.lveditor.draft\n"
-                        "（第一次点「一键导出」时伴侣会自动找一遍；\n"
+                        "（第一次点「一键导出」时助手会自动找一遍；\n"
                         "  也可以右键 →「设置草稿目录…」直接手动指）"))
     else:
         out.append(draft_root_status(cfg))

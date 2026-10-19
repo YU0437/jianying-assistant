@@ -23,18 +23,18 @@
 | Check | How |
 |---|---|
 | You have **Jianying Pro** (the desktop version, not mobile/web) | "剪映专业版" appears in the Start menu |
-| Jianying has been **opened at least once** | The first launch creates the config file the companion reads to locate your drafts |
+| Jianying has been **opened at least once** | The first launch creates the config file the assistant reads to locate your drafts |
 
-> If you haven't opened it yet, that's fine — open Jianying once, then start the companion.
-> (The companion re-detects its environment on every launch.)
-> The companion **does not include Jianying** and cannot edit video; it's just a "press keys for you" helper.
+> If you haven't opened it yet, that's fine — open Jianying once, then start the assistant.
+> (The assistant re-detects its environment on every launch.)
+> The assistant **does not include Jianying** and cannot edit video; it's just a "press keys for you" helper.
 
 ## Step 1: Download the installer
 
 From the project's [Releases](../../releases) page, download the latest:
 
 ```
-剪映伴侣-Setup-1.0.0.exe      (~22 MB)
+剪映助手-Setup-1.0.0.exe      (~22 MB)
 ```
 
 ## Step 2: Get past the "Unknown publisher" warning
@@ -65,14 +65,14 @@ Properties → tick **"Unblock"** at the bottom → OK, then double-click it aga
 The installer defaults to:
 
 ```
-%LOCALAPPDATA%\JianyingCompanion
+%LOCALAPPDATA%\JianyingAssistant
 ```
 
-(usually `C:\Users\<you>\AppData\Local\JianyingCompanion`)
+(usually `C:\Users\<you>\AppData\Local\JianyingAssistant`)
 
 **Keep the default.** Here's why:
 
-> The companion stores its config file and run log inside its own program folder.
+> The assistant stores its config file and run log inside its own program folder.
 > If you install it to a directory that needs administrator rights to write, such as
 > `C:\Program Files\...`, **saving will fail on every launch** (any hotkey changes or draft-folder
 > choices you make would be lost).
@@ -82,7 +82,7 @@ to go back to the default.
 
 ## Step 4: Setup finishes (it configures itself)
 
-Near the end of setup, the companion **runs its environment detection once** and tells you the result:
+Near the end of setup, the assistant **runs its environment detection once** and tells you the result:
 
 - **Found where Jianying is installed** → written into the config
 - **Found where your drafts live** → written into the config
@@ -98,7 +98,7 @@ Near the end of setup, the companion **runs its environment detection once** and
 After installing:
 
 - Setup asks whether to **open the manual** (recommended)
-- Launch "剪映伴侣" from the Start menu / desktop shortcut
+- Launch "剪映助手" from the Start menu / desktop shortcut
 
 On first launch it **runs an environment self-check again** and reports the result on the floating
 ball:
@@ -133,14 +133,14 @@ Then follow what the ball says:
 
 Uninstalling **does not delete**:
 
-- Your config (`伴侣配置.json`)
+- Your config (`助手配置.json`)
 - The draft backups on your Desktop (`Desktop\剪映预合成导出\_备份\`)
 
 To clean up completely: after uninstalling, delete the install folder and the
 "剪映预合成导出" folder on your Desktop.
 
-> ★ If the companion previously wrote a "pre-compose" hotkey into Jianying, uninstalling will
-> **not** remove it. To remove it: launch the companion once → right-click → "还原剪映快捷键设置",
+> ★ If the assistant previously wrote a "pre-compose" hotkey into Jianying, uninstalling will
+> **not** remove it. To remove it: launch the assistant once → right-click → "还原剪映快捷键设置",
 > then uninstall. (Or delete that entry yourself in Jianying → Settings → Shortcuts.)
 
 ## If it won't install, or something's wrong
@@ -149,7 +149,7 @@ To clean up completely: after uninstalling, delete the install folder and the
 |---|---|
 | Double-clicking does nothing | See [Step 2](#step-2-get-past-the-unknown-publisher-warning); or antivirus silently blocked it |
 | Installed but won't launch | Reinstall to the default directory (you probably picked a directory needing admin rights) |
-| No ball appears | Check `%LOCALAPPDATA%\JianyingCompanion\运行日志.txt`; or use the right-click menu → "打开运行日志" |
+| No ball appears | Check `%LOCALAPPDATA%\JianyingAssistant\运行日志.txt`; or use the right-click menu → "打开运行日志" |
 | "Jianying Pro not found" | Right-click the ball → "设置剪映路径…" and pick `JianyingPro.exe` |
 | "Draft folder not found" | Right-click the ball → "设置草稿目录…" (usually `…\Projects\com.lveditor.draft`) |
 | Import says "unsupported media format" | In Jianying, click **back to the draft list** (top-left) to make it save once, then reopen the draft and drag the file in |

@@ -56,9 +56,9 @@ with tempfile.TemporaryDirectory() as _td:
 
     core.desktop_dir = lambda: fake_desktop          # 把"桌面"指到临时目录
     # ★ 关键：backup_draft_json 成功后会 save_config()，而 save_config 写的是
-    #   **项目目录里的真实 伴侣配置.json**。测试必须把它也重定向到临时目录，
+    #   **项目目录里的真实 助手配置.json**。测试必须把它也重定向到临时目录，
     #   否则会往用户配置里塞一堆 fake 路径（第一次写这个测试时就踩了）。
-    core.config_path = lambda: base / "假·伴侣配置.json"
+    core.config_path = lambda: base / "假·助手配置.json"
 
     print("[1] 备份：只拷 .json，跳过 Resources / .backup")
     cfg = core.default_config()
@@ -217,7 +217,7 @@ with tempfile.TemporaryDirectory() as _td:
           "S1" not in core._orphan_subdrafts(bk, draft), True)
     check("没有 subdraft 目录时不报错（返回空）",
           core._orphan_subdrafts(bk, base / "空目录"), [])
-    check("★ 报告文案里明确写了「伴侣从不删你的文件」",
+    check("★ 报告文案里明确写了「助手从不删你的文件」",
           "从不删你的文件" in _inspect.getsource(core.restore_draft), True)
 
 print()
