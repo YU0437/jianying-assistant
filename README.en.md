@@ -4,7 +4,7 @@
 
 A pre-compose export helper for Jianying Pro.
 
-![UI preview](docs/ui-preview.png)
+![UI preview](docs/ui-preview-static.png)
 
 ## Effects
 
@@ -29,6 +29,7 @@ Supports Windows 10 / 11 x64. Jianying must have been opened at least once.
 
 ## Notes
 
+- When Jianying closes, the assistant keeps waiting in the background; the ball reappears when Jianying is opened again.
 - The workflow restarts Jianying and clears the current timeline. The assistant backs up the draft first and can restore it after export.
 - It only simulates keyboard/mouse input and moves windows; it does not modify video files.
 - Use only drafts you own the rights to, and keep your own backup.

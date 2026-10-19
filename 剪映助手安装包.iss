@@ -50,10 +50,22 @@ Source: "使用说明.txt"; DestDir: "{app}"; Flags: ignoreversion
 ;   那是代码猜不到的"机器事实"，不写才会逼用户去点菜单。
 ;   注意它只合并这几个键（见 jy_core.AUTOSETUP_KEYS），**不会**把默认值抄成文件。
 
+[InstallDelete]
+; 从旧版升级时清掉改名前的程序和快捷方式，避免用户继续点“剪映伴侣”启动旧版。
+Type: files; Name: "{app}\剪映伴侣.exe"
+Type: files; Name: "{userprograms}\剪映伴侣\剪映伴侣.lnk"
+Type: files; Name: "{userprograms}\剪映伴侣\卸载剪映伴侣.lnk"
+Type: files; Name: "{userprograms}\剪映伴侣\剪映助手.lnk"
+Type: files; Name: "{userprograms}\剪映伴侣\卸载剪映助手.lnk"
+Type: files; Name: "{userprograms}\剪映伴侣\使用说明.lnk"
+Type: files; Name: "{autodesktop}\剪映伴侣.lnk"
+Type: dirifempty; Name: "{userprograms}\剪映伴侣"
+
 [Icons]
-Name: "{group}\剪映助手"; Filename: "{app}\剪映助手.exe"
-Name: "{group}\使用说明"; Filename: "{app}\使用说明.txt"
-Name: "{group}\卸载剪映助手"; Filename: "{uninstallexe}"
+; 显式写到“剪映助手”文件夹；升级时 Inno 会沿用旧 {group}，不能靠它完成改名。
+Name: "{userprograms}\剪映助手\剪映助手"; Filename: "{app}\剪映助手.exe"
+Name: "{userprograms}\剪映助手\使用说明"; Filename: "{app}\使用说明.txt"
+Name: "{userprograms}\剪映助手\卸载剪映助手"; Filename: "{uninstallexe}"
 Name: "{autodesktop}\剪映助手"; Filename: "{app}\剪映助手.exe"; Tasks: desktopicon
 
 [Tasks]

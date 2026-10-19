@@ -10,7 +10,7 @@
 - [Code layout](#code-layout)
 - [Tests](#tests)
 - [Full release pipeline](#full-release-pipeline)
-- [How to regenerate the UI preview](#how-to-regenerate-the-ui-preview-docsui-previewpng)
+- [How to regenerate the UI preview](#how-to-regenerate-the-ui-preview-docsui-preview-staticpng)
 - [Pitfalls we actually hit](#pitfalls-we-actually-hit)
 - [Hard rules when changing this code](#hard-rules-when-changing-this-code)
 
@@ -129,7 +129,7 @@ deserialises the code objects of the main script and `jy_core`, then asserts:
 Then check: the config contains only the whitelisted keys, the path values are right, and the result
 file was deleted. Then uninstall: the user config is **kept**, the log/result files are cleaned up.
 
-## How to regenerate the UI preview (`docs/ui-preview.png`)
+## How to regenerate the UI preview (`docs/ui-preview-static.png`)
 
 The image at the top of the README must be **rendered from the real app**, never hand-assembled —
 a hand-made image keeps showing the old colours after a redesign, and a doc that lies is worse than
