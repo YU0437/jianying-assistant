@@ -961,8 +961,6 @@ class Companion:
         self.known_windows = None
         self._main_class = None
         self._last_rescue = 0.0
-        self._jy_seen = False
-        self._jy_gone_since = 0.0
         self._hidden_for_jy = False
         # 已自动关闭过的广告窗口句柄（幂等：一个 hwnd 只关一次，
         # 防止剪映反复弹同一广告导致关窗口忙循环）
@@ -2771,6 +2769,19 @@ class Companion:
             _xy = self.cfg.get("float_xy")
             if custom and isinstance(_xy, (list, tuple)) and len(_xy) == 2:
                 x, y = int(_xy[0]), int(_xy[1])
+                # 用户可能换过显示器，或旧配置把球存在了另一块屏上。剪映在前台时
+                # 优先保证球落在剪映所在显示器，避免"程序在跑但肉眼找不到"。
+                if self.jy_hwnd and user32.IsWindow(self.jy_hwnd) \
+                        and not core.is_minimized(self.jy_hwnd):
+                    try:
+                        wa = core.monitor_work_area(self.jy_hwnd)
+                        if wa and not (wa[0] <= x and x + self.W <= wa[2]
+                                       and wa[1] <= y and y + self.H <= wa[3]):
+                            print(f"[float] 自定义位置不在剪映所在屏，改为跟随剪映: {(x, y)} -> {wa}", flush=True)
+                            custom = False
+                            x, y = None, None
+                    except Exception:
+                        pass
             if x is None and self.jy_hwnd and user32.IsWindow(self.jy_hwnd) \
                     and not core.is_minimized(self.jy_hwnd):
                 rc = wt.RECT()
@@ -3605,21 +3616,10 @@ class Companion:
                 elif not self.embedded:
                     self._float_position()
 
-            # ---- 同生共死（退出侧）：剪映彻底退出 → 助手随之退出 ----
-            # 注意：显示/隐藏（最小化、切到别的程序）已交给 33ms 的 _follow_fast，
-            # 这里只管"剪映真的没了"这一件事，避免两个循环抢窗口的显隐状态。
-            if not self.embedded and self.state[0] != "busy":
-                if self.jy_hwnd and user32.IsWindow(self.jy_hwnd):
-                    self._jy_seen = True
-                    self._jy_gone_since = 0.0
-                else:
-                    if not getattr(self, "_jy_gone_since", 0):
-                        self._jy_gone_since = time.time()
-                    if getattr(self, "_jy_seen", False) \
-                            and time.time() - self._jy_gone_since > 10:
-                        print("[exit] 剪映已完全退出，助手随之退出", flush=True)
-                        self._quit()
-                        return
+            # ---- 跟随剪映显隐 ----
+            # 剪映关闭时只隐藏小球，助手继续在后台等待；用户再次打开剪映后，
+            # _follow_fast 会重新找到窗口并显示小球。不能在这里退出，否则用户
+            # 下次单独启动剪映时过程序已经没了，看起来就是"小球消失"。
         except Exception:
             pass
         self.root.after(500, self._follow)
