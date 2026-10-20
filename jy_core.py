@@ -259,12 +259,12 @@ def config_path():
 
 def load_config():
     cfg = default_config()
-    # 升级改名时先读旧配置，再用新配置覆盖。安装器的 --autosetup 可能先创建
-    # 一份只含路径键的 助手配置.json，若只读新文件会丢掉旧配置里的备份指针等状态。
-    for path in (config_path().with_name("伴侣配置.json"), config_path()):
+    # 升级改名时沿用旧配置，避免用户的剪映路径 / 草稿位置 / 快捷键备份指针丢失。
+    for path in (config_path(), config_path().with_name("伴侣配置.json")):
         try:
             if path.exists():
                 cfg.update(json.loads(path.read_text(encoding="utf-8")))
+                break
         except Exception:
             continue
     return cfg
@@ -704,29 +704,6 @@ def _window_size(hwnd):
     return (r[2] - r[0], r[3] - r[1])
 
 
-_BROWSER_EXES = {
-    "chrome.exe", "msedge.exe", "firefox.exe", "brave.exe", "opera.exe",
-    "vivaldi.exe", "360se.exe", "360chrome.exe", "qqbrowser.exe", "sogouexplorer.exe",
-}
-_JY_TITLE_PREFIXES = ("剪映专业版", "JianyingPro", "CapCut")
-
-
-def _fallback_jianying_window(title, cls, exe_name=""):
-    """进程名认不出时，判断一个窗口是否**可信地**像剪映主窗口。
-
-    浏览器标签标题也可能包含「剪映专业版」（本项目 GitHub 页面就是），所以只看
-    标题会把 Chrome 当成剪映。兜底必须同时满足：不是浏览器、窗口类是剪映的 Qt
-    顶层类、标题以剪映产品名开头。
-    """
-    exe = os.path.basename(exe_name or "").lower()
-    if exe in _BROWSER_EXES:
-        return False
-    if not (cls or "").startswith("Qt"):
-        return False
-    t = (title or "").strip()
-    return any(t.startswith(p) for p in _JY_TITLE_PREFIXES)
-
-
 def find_jianying(exclude=0):
     """剪映**主窗口** (hwnd, title)；找不到返回 None。
 
@@ -764,26 +741,15 @@ def find_jianying(exclude=0):
             continue
         owner = user32.GetWindow(hwnd, GW_OWNER)
         cands.append((hwnd, title, w * h, bool(user32.IsWindowVisible(hwnd)), cls, owner))
-    # 兜底：进程名认不出时，只接受「Qt 类 + 剪映标题 + 非浏览器」的大窗口。
-    # 不能只按标题含「剪映专业版」判断：本项目 GitHub 页面在 Chrome 里的标签
-    # 标题就包含这几个字，旧兜底会把浏览器当成剪映。
+    # 兜底：标题含剪映的窗口（务必排除自身，否则会把自己当成剪映）；同样过尺寸闸
     if not cands:
         for hwnd, title in enum_windows():
-            if hwnd == exclude:
-                continue
-            user32.GetWindowThreadProcessId(hwnd, ctypes.byref(pid_of))
-            buf = ctypes.create_unicode_buffer(256)
-            user32.GetClassNameW(hwnd, buf, 256)
-            if not _fallback_jianying_window(title, buf.value, procs.get(pid_of.value, "")):
+            if hwnd == exclude or ("剪映专业版" not in title and "CapCut" not in title):
                 continue
             w, h = _window_size(hwnd)
-            if w < MAIN_MIN_W or h < MAIN_MIN_H:
-                continue
-            owner = user32.GetWindow(hwnd, GW_OWNER)
-            cands.append((hwnd, title, w * h, bool(user32.IsWindowVisible(hwnd)),
-                          buf.value, owner))
-        if not cands:
-            return None
+            if w >= MAIN_MIN_W and h >= MAIN_MIN_H:
+                return (hwnd, title)
+        return None
     # 闸②：可见 / 无 owner / QWindowIcon / 面积，依次比较
     best = max(cands, key=lambda c: (c[3], c[5] == 0, "QWindowIcon" in c[4], c[2]))
     return (best[0], best[1])

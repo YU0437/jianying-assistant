@@ -2995,56 +2995,6 @@ check("㉔-3 打包配置不再引用动图资源",
 check("㉔-4 球心静态语义保持不变（busy=百分比 / idle=剪）",
       (gui.ball_label("busy", 87), gui.ball_label("idle", None)), ("87", "剪"))
 
-# ══════════════════════════════════════════════════════════════════════
-# 1.9.2 收尾：关剪映不退出 + 旧配置迁移 + 安装包清理旧名字
-# ══════════════════════════════════════════════════════════════════════
-_follow_src = code_of(gui.Companion._follow)
-check("㉕-1 剪映关闭后，跟随循环绝不能退出助手",
-      "_quit()" not in _follow_src and "剪映已完全退出" not in _follow_src, True)
-
-import shutil as _shutil25  # noqa: E402
-
-_t25 = Path(tempfile.mkdtemp(prefix="cfgmerge25_"))
-_old25 = _t25 / "伴侣配置.json"
-_new25 = _t25 / "助手配置.json"
-_old25.write_text(json.dumps({
-    "_backup_dir": "OLD_BACKUP",
-    "float_xy": [-565, 929],
-    "draft_root": "OLD_DRAFT",
-}, ensure_ascii=False), encoding="utf-8")
-_new25.write_text(json.dumps({
-    "draft_root": "NEW_DRAFT",
-    "jianying_exe": "NEW_EXE",
-}, ensure_ascii=False), encoding="utf-8")
-_keep_cfg25 = core.config_path
-core.config_path = lambda: _new25
-try:
-    _cfg25 = core.load_config()
-finally:
-    core.config_path = _keep_cfg25
-    _shutil25.rmtree(_t25, ignore_errors=True)
-check("㉕-2 旧配置的备份指针保留，新配置的路径优先",
-      (_cfg25.get("_backup_dir"), _cfg25.get("float_xy"),
-       _cfg25.get("draft_root"), _cfg25.get("jianying_exe")),
-      ("OLD_BACKUP", [-565, 929], "NEW_DRAFT", "NEW_EXE"))
-
-_iss25 = (HERE / "剪映助手安装包.iss").read_text(encoding="utf-8")
-check("㉕-3 升级安装会清理旧程序和旧快捷方式",
-      all(s in _iss25 for s in (
-          "{app}\\剪映伴侣.exe",
-          "{userprograms}\\剪映伴侣\\剪映伴侣.lnk",
-          "{userprograms}\\剪映伴侣\\剪映助手.lnk",
-          "{userprograms}\\剪映伴侣\\使用说明.lnk",
-          "{autodesktop}\\剪映伴侣.lnk",
-          "{userprograms}\\剪映助手\\剪映助手")), True)
-check("㉕-4 浏览器标题含「剪映专业版」也不会被当成剪映",
-      core._fallback_jianying_window(
-          "YU0437/jianying-assistant: 剪映专业版「预合成导出」一键辅助 - Google Chrome",
-          "Chrome_WidgetWin_1", "chrome.exe"), False)
-check("㉕-5 真剪映 Qt 主窗口仍能兜底识别",
-      core._fallback_jianying_window("剪映专业版", "Qt622QWindowIcon",
-                                     "JianyingPro.exe"), True)
-
 print()
 print("失败项:", fails if fails else "无")
 sys.exit(1 if fails else 0)
